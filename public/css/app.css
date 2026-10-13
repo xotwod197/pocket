@@ -294,3 +294,8 @@ svg text { font-family: inherit; }
 /* while a form sheet is open, toasts appear at the top so they never cover inputs or buttons */
 body.sheet-open .toast { bottom: auto; top: calc(var(--sat) + 12px); transform: translateX(-50%) translateY(-20px); }
 body.sheet-open .toast.show { transform: translateX(-50%) translateY(0); }
+
+/* "+ New" category tile */
+.catgrid button.newcat { background: transparent; border: 2px dashed var(--line); color: var(--accent); }
+.catgrid button.newcat .e { font-size: 22px; font-weight: 300; }
+.catgrid button.newcat:active { background: var(--accent-soft); }

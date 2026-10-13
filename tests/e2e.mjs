@@ -104,6 +104,7 @@ const run = async () => {
   await act("editJob");
   await p.fill("#jName", "Target");
   await act("segPick", '[data-v="fixed"]');
+  { const on = await p.locator('#sheet [data-seg="payType"] button.on').allInnerTexts(); ok("Same-each-check switch highlights", on.length === 1 && on[0] === "Same each check", on.join(",")); }
   await p.fill("#jFixed", "287.50");
   await p.selectOption("#fFreq", "biweekly"); await p.waitForTimeout(100);
   await p.fill("#fStart", "2026-10-16");
@@ -130,6 +131,7 @@ const run = async () => {
   await act("editRule");
   await p.fill("#fAmt", "15.49"); await p.fill("#fLabel", "Netflix");
   await act("segPick", '[data-v="subscription"]');
+  { const on = await p.locator('#sheet [data-seg="rkind"] button.on').allInnerTexts(); ok("Subscription switch highlights", on.length === 1 && on[0] === "Subscription", on.join(",")); }
   await tap('[data-act="pickCat"][data-v="sub"]');
   await p.fill("#fMd", "20"); await p.fill("#fStart", "2026-10-13");
   await act("saveRule"); await p.waitForTimeout(300);
@@ -186,6 +188,47 @@ const run = async () => {
   t = await appText();
   ok("home balance dropped by $42.18 → $1,207.82", t.includes("$1,207.82"), t.slice(0, 500));
 
+  // ---- every switch moves its highlight (regression: tab stayed on "Expense") ----
+  const onText = (sel) => p.locator(sel + " button.on").allInnerTexts();
+  await tap(".tbadd");
+  for (const [v, label] of [["income", "Income"], ["transfer", "Transfer"], ["expense", "Expense"], ["transfer", "Transfer"]]) {
+    await act("segPick", `[data-seg="type"][data-v="${v}"]`);
+    const on = await onText('#sheet [data-seg="type"]');
+    ok(`tapping ${label} highlights ${label} only`, on.length === 1 && on[0] === label, on.join(","));
+  }
+  ok("transfer hides categories and shows To account", (await p.locator("#fCatWrap .catgrid").count()) === 0 && (await p.locator('[data-grid="toAccountId"]').count()) === 1);
+  await act("closeSheet");
+
+  // ---- add a brand-new category from inside the add screen ----
+  await tap(".tbadd");
+  ok("category grid has a + New tile", (await p.locator("#fCatWrap .newcat").count()) === 1);
+  await act("newCatOpen");
+  ok("new-category box opens", await p.locator("#ncName").isVisible());
+  await layoutCheck(p, "new category box");
+  await p.fill("#ncName", "Coffee");
+  await act("ncEmoji", '[data-v="☕"]');
+  const emo = await onText('[data-grid="ncEmoji"]');
+  ok("icon pick highlights only that icon", emo.length === 1 && emo[0] === "☕", emo.join(","));
+  await act("newCatSave"); await p.waitForTimeout(300);
+  const sel = await p.locator('#fCatWrap [data-grid="cat"] button.on').innerText().catch(() => "");
+  ok("new category is created and selected", sel.includes("Coffee"), sel);
+  ok("new-category box closes after adding", (await p.locator("#ncName").count()) === 0);
+  await p.fill("#fAmt", "5.25"); await p.fill("#fLabel", "Latte");
+  await act("saveTx"); await p.waitForTimeout(300);
+  const saved = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem("pocket-demo-v1")); const c = Object.entries(d.categories).find(([, v]) => v.name === "Coffee"); const t = Object.values(d.tx).find((x) => x.label === "Latte"); return { cat: c && c[1], catId: c && c[0], tx: t }; });
+  ok("Coffee saved as a spending category with its icon", saved.cat && saved.cat.kind === "expense" && saved.cat.emoji === "☕", JSON.stringify(saved.cat));
+  ok("Latte saved under Coffee", saved.tx && saved.tx.categoryId === saved.catId, JSON.stringify(saved.tx));
+  // duplicate name just selects the existing one
+  await tap(".tbadd"); await act("newCatOpen"); await p.fill("#ncName", "coffee"); await act("newCatSave"); await p.waitForTimeout(250);
+  const nCoffee = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem("pocket-demo-v1")).categories).filter((c) => c.name.toLowerCase() === "coffee").length);
+  ok("adding a duplicate name doesn't create a second one", nCoffee === 1, nCoffee);
+  // income side gets its own + New, and creates an income category
+  await act("segPick", '[data-seg="type"][data-v="income"]');
+  await act("newCatOpen"); await p.fill("#ncName", "Tips"); await p.keyboard.press("Enter"); await p.waitForTimeout(300);
+  const tips = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem("pocket-demo-v1")).categories).find((c) => c.name === "Tips"));
+  ok("Enter key adds an income category from the Income tab", tips && tips.kind === "income", JSON.stringify(tips));
+  await act("closeSheet");
+
   // ---- transfer bank → Cash App ----
   await tap(".tbadd");
   await act("segPick", '[data-v="transfer"]');
@@ -193,7 +236,7 @@ const run = async () => {
   await tap('[data-grid="toAccountId"] button:has-text("Cash App")');
   await act("saveTx"); await p.waitForTimeout(400);
   t = await appText();
-  ok("transfer: bank $1,107.82 and Cash App $140.00", t.includes("$1,107.82") && t.includes("$140.00"), t.slice(0, 500));
+  ok("transfer: bank $1,102.57 and Cash App $140.00", t.includes("$1,102.57") && t.includes("$140.00"), t.slice(0, 500));
 
   // ---- edit + delete + undo ----
   await act("tab", '[data-v="activity"]');
@@ -271,7 +314,7 @@ const run = async () => {
   // export json works (download fallback path in desktop chromium)
   const [dl] = await Promise.all([p.waitForEvent("download", { timeout: 3000 }).catch(() => null), act("exportJson")]);
   ok("backup download produced", !!dl);
-  if (dl) { const path = await dl.path(); const j = JSON.parse((await import("node:fs")).readFileSync(path, "utf8")); ok("backup has all transactions", j.transactions.length === NBACK + 2, j.transactions.length); }
+  if (dl) { const path = await dl.path(); const j = JSON.parse((await import("node:fs")).readFileSync(path, "utf8")); ok("backup has all transactions", j.transactions.length === NBACK + 3, j.transactions.length); }
 
   // ---- theme dark ----
   await act("theme", '[data-v="dark"]'); await p.waitForTimeout(200);

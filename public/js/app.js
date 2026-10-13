@@ -665,7 +665,33 @@ function closeSheet() {
 }
 function seg(name, cur, opts) { return `<div class="seg" data-seg="${name}">${opts.map(([v, l]) => `<button type="button" class="${cur === v ? "on" : ""}" data-act="segPick" data-seg="${name}" data-v="${v}">${l}</button>`).join("")}</div>`; }
 function catGrid(kind, sel) {
-  return `<div class="catgrid" data-grid="cat">${sortedCats(kind).map((c) => `<button type="button" class="${c.id === sel ? "on" : ""}" data-act="pickCat" data-v="${c.id}"><span class="e">${esc(c.emoji || "📦")}</span>${esc(c.name)}</button>`).join("")}</div>`;
+  return `<div class="catgrid" data-grid="cat">${sortedCats(kind).map((c) => `<button type="button" class="${c.id === sel ? "on" : ""}" data-act="pickCat" data-v="${c.id}"><span class="e">${esc(c.emoji || "📦")}</span>${esc(c.name)}</button>`).join("")}<button type="button" class="newcat" data-act="newCatOpen" data-kind="${kind}" aria-label="Add a new category"><span class="e">＋</span>New</button></div><div id="newCatBox"></div>`;
+}
+const NEWCAT_EMOJIS = ["☕","🍕","🍺","🎬","🏋️","🐶","👶","📚","🎓","🚌","🅿️","🧾","💇","🎁","🧰","🏥","✈️","🎮","💻","📦"];
+function newCatForm(kind) {
+  const f = S.form;
+  if (!f.ncEmoji) f.ncEmoji = NEWCAT_EMOJIS[0];
+  return `<div class="card" style="margin:10px 0 0;background:var(--surface-2);border:none">
+    <div class="fg" style="margin-bottom:10px"><label for="ncName">New ${kind === "income" ? "income" : "spending"} category</label>
+      <input id="ncName" autocomplete="off" autocapitalize="words" maxlength="40" placeholder="e.g. Coffee, Pets, School" enterkeyhint="done"></div>
+    <div class="fg" style="margin-bottom:10px"><span class="lab">Icon</span><div class="emojis" data-grid="ncEmoji">${NEWCAT_EMOJIS.map((e) => `<button type="button" class="${f.ncEmoji === e ? "on" : ""}" data-act="ncEmoji" data-v="${e}">${e}</button>`).join("")}</div></div>
+    <div class="btnrow" style="margin:0"><button type="button" class="bigbtn ghost small" data-act="newCatCancel">Cancel</button><button type="button" class="bigbtn small" data-act="newCatSave" data-kind="${kind}" id="ncSave">Add category</button></div>
+    <p class="hint" style="font-size:12.5px;color:var(--text-3);margin:8px 2px 0">Rename, recolor or set a budget later in Settings → Categories.</p></div>`;
+}
+async function newCatSave(kind) {
+  const name = val("ncName").trim();
+  if (!name) { toast("Give the category a name."); $("ncName").focus(); return; }
+  const clash = data().categories.find((c) => c.kind === kind && c.name.trim().toLowerCase() === name.toLowerCase());
+  if (clash) { S.form.categoryId = clash.id; $("fCatWrap").innerHTML = txCatBlock(); toast(`"${clash.name}" already exists, so it's selected.`); return; }
+  const btn = $("ncSave"); if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
+  const id = newId();
+  const n = data().categories.length;
+  try {
+    await S.store.put("categories", id, { name, emoji: S.form.ncEmoji || "📦", color: PALETTE[n % PALETTE.length], kind, budget: 0, order: 900 + n });
+    S.form.categoryId = id; S.form.ncEmoji = null;
+    $("fCatWrap").innerHTML = txCatBlock();
+    toast(`Added "${name}"`);
+  } catch (e) { if (btn) { btn.disabled = false; btn.textContent = "Add category"; } toast("Couldn't add it: " + (e.code || e.message)); }
 }
 function accPick(field, sel, exclude) {
   return `<div class="accpick" data-grid="${field}">${activeAccounts().filter((a) => a.id !== exclude).map((a) => `<button type="button" class="${a.id === sel ? "on" : ""}" data-act="pickAcc" data-field="${field}" data-v="${a.id}"><span class="cdot" style="background:${a.color}"></span>${esc(a.name)}</button>`).join("")}</div>`;
@@ -1233,7 +1259,8 @@ const ACT = {
   exportJson, exportCsv,
   onbDone: finishOnboarding,
   segPick: (ds, el) => {
-    pickInGrid(el);
+    const row = el.closest(".seg");
+    if (row) row.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el));
     const f = S.form; if (!f) return;
     if (ds.seg === "type") { f.type = ds.v; f.categoryId = null; if (ds.v === "transfer" && !f.toAccountId) f.toAccountId = (activeAccounts().find((a) => a.id !== f.accountId) || {}).id || null; refreshTxForm();
       if ($("fKindWrap")) $("fKindWrap").innerHTML = f.type === "expense" ? `<div class="fg"><span class="lab">Type</span>${seg("rkind", f.rkind || "bill", [["bill", "Bill"], ["subscription", "Subscription"]])}</div>` : ""; }
@@ -1242,6 +1269,10 @@ const ACT = {
     if (ds.seg === "payType") { f.payType = ds.v; $("jPayFields").innerHTML = jobPayFields({ payType: ds.v, hours: 40, tax: 20 }, null); jobEstimate(); }
   },
   pickCat: (ds, el) => { pickInGrid(el); S.form.categoryId = ds.v; },
+  newCatOpen: (ds) => { const box = $("newCatBox"); if (!box) return; box.innerHTML = newCatForm(ds.kind); setTimeout(() => { const i = $("ncName"); if (i) { i.focus(); i.scrollIntoView({ block: "center", behavior: "smooth" }); } }, 50); },
+  newCatCancel: () => { const box = $("newCatBox"); if (box) box.innerHTML = ""; },
+  newCatSave: (ds) => newCatSave(ds.kind),
+  ncEmoji: (ds, el) => { const g = el.closest("[data-grid]"); if (g) g.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el)); S.form.ncEmoji = ds.v; },
   pickAcc: (ds, el) => {
     pickInGrid(el); S.form[ds.field] = ds.v;
     if (ds.field === "accountId" && S.form.type === "transfer") { if (S.form.toAccountId === ds.v) S.form.toAccountId = null; $("fToWrap").innerHTML = `<div class="fg"><span class="lab">To</span>${accPick("toAccountId", S.form.toAccountId, S.form.accountId)}</div>`; }
@@ -1256,6 +1287,7 @@ document.addEventListener("click", (e) => {
   Promise.resolve(f(el.dataset, el, e)).catch((err) => toast("Something went wrong: " + (err.code || err.message)));
 });
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target && e.target.id === "ncName") { e.preventDefault(); const b = $("ncSave"); if (b) b.click(); return; }
   if (e.key === "Escape" && $("sheet").classList.contains("open")) closeSheet();
   if ((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("role") === "button") { e.preventDefault(); e.target.click(); }
 });
