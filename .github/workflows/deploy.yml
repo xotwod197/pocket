@@ -1,0 +1,34 @@
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run money-engine tests
+        run: node --test tests/finance.test.mjs
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check setup
+        run: |
+          if [ -z "${{ vars.FIREBASE_PROJECT_ID }}" ]; then echo "::error::Add a repository variable named FIREBASE_PROJECT_ID (see README step 6)"; exit 1; fi
+          if grep -q "PASTE_API_KEY" public/js/firebase-config.js; then echo "::error::Paste your Firebase config into public/js/firebase-config.js (see README step 2)"; exit 1; fi
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: live

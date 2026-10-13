@@ -1,0 +1,6 @@
+node_modules/
+.firebase/
+*.log
+.DS_Store
+tests/shots/
+tests/fixtures/private-*.json

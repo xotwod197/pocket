@@ -1,0 +1,549 @@
+{
+ "app": "Finance Tracker",
+ "exportedAt": "2026-10-12",
+ "note": "Made-up sample data for tests",
+ "startingBalance": 0,
+ "recurring": [],
+ "skips": [],
+ "entries": [
+  {
+   "date": "2026-08-31",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-09-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2026-09-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-09-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-09-04",
+   "label": "Groceries",
+   "amount": 49.43,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-09-07",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-09-09",
+   "label": "capital one",
+   "amount": 55.0,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-09-14",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-09-15",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-09-15",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-09-15",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-09-18",
+   "label": "Groceries",
+   "amount": 39.05,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-09-21",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-09-28",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-09-28",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-10-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2026-10-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-10-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-10-02",
+   "label": "Groceries",
+   "amount": 69.06,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-10-05",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-10-09",
+   "label": "capital one",
+   "amount": 55.0,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-10-12",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-10-15",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-10-15",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-10-15",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-10-16",
+   "label": "Groceries",
+   "amount": 34.35,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-10-19",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-10-26",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-10-28",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-10-30",
+   "label": "Groceries",
+   "amount": 62.15,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-11-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2026-11-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-11-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-11-02",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-11-06",
+   "label": "Groceries",
+   "amount": 51.94,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-11-09",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-11-09",
+   "label": "capital one",
+   "amount": 55.0,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-11-15",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-11-15",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-11-15",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-11-16",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-11-20",
+   "label": "Groceries",
+   "amount": 33.48,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-11-23",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-11-28",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-11-30",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-12-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2026-12-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-12-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-12-04",
+   "label": "Groceries",
+   "amount": 60.45,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-12-07",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-12-09",
+   "label": "capital one",
+   "amount": 55.0,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-12-14",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-12-15",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-12-15",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2026-12-15",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2026-12-18",
+   "label": "Groceries",
+   "amount": 32.25,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2026-12-21",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2026-12-28",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2026-12-28",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-01-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2027-01-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2027-01-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2027-01-04",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-01-08",
+   "label": "Groceries",
+   "amount": 56.02,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2027-01-09",
+   "label": "capital one",
+   "amount": 55.0,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2027-01-11",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-01-15",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2027-01-15",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2027-01-15",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  },
+  {
+   "date": "2027-01-18",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-01-22",
+   "label": "Groceries",
+   "amount": 34.19,
+   "type": "expense",
+   "category": "misc"
+  },
+  {
+   "date": "2027-01-25",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-01-28",
+   "label": "Paycheck",
+   "amount": 1500.0,
+   "type": "income",
+   "category": "income"
+  },
+  {
+   "date": "2027-02-01",
+   "label": "Car payment",
+   "amount": 180.0,
+   "type": "expense",
+   "category": "car"
+  },
+  {
+   "date": "2027-02-01",
+   "label": "Rent + insurance",
+   "amount": 400.0,
+   "type": "expense",
+   "category": "rent"
+  },
+  {
+   "date": "2027-02-01",
+   "label": "Cash App transfer",
+   "amount": 150.0,
+   "type": "expense",
+   "category": "cashapp"
+  },
+  {
+   "date": "2027-02-01",
+   "label": "PayPal transfer",
+   "amount": 100.0,
+   "type": "expense",
+   "category": "paypal"
+  }
+ ]
+}
