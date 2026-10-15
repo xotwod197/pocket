@@ -1,0 +1,167 @@
+/* ios.css — optional iOS "Liquid Glass" skin for Pocket.
+   Loaded after app.css and only applies when <html> has class "ios".
+   Colors follow Apple's system palette (systemBlue, systemGreen, systemRed, grouped backgrounds). */
+
+:root.ios {
+  --bg: #f2f2f7; --surface: #ffffff; --surface-2: rgba(118,118,128,.12); --surface-3: rgba(118,118,128,.24);
+  --line: rgba(60,60,67,.16); --sep: rgba(60,60,67,.22);
+  --text: #000000; --text-2: rgba(60,60,67,.62); --text-3: rgba(60,60,67,.46);
+  --income: #248a3d; --expense: #e0362c; --accent: #007aff; --accent-ink: #ffffff; --accent-soft: rgba(0,122,255,.12);
+  --warn: #a05a00; --warn-bg: rgba(255,149,0,.14); --bad-bg: rgba(255,59,48,.12); --good-bg: rgba(52,199,89,.15);
+  --glass: rgba(250,250,252,.9); --glass-strong: rgba(255,255,255,.9); --glass-edge: rgba(255,255,255,.9); --glass-shadow: 0 8px 28px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.06);
+  --r: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root.ios:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: rgba(118,118,128,.24); --surface-3: rgba(118,118,128,.36);
+    --line: rgba(84,84,88,.5); --sep: rgba(84,84,88,.6);
+    --text: #ffffff; --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.42);
+    --income: #30d158; --expense: #ff453a; --accent: #0a84ff; --accent-ink: #ffffff; --accent-soft: rgba(10,132,255,.22);
+    --warn: #ffb340; --warn-bg: rgba(255,159,10,.18); --bad-bg: rgba(255,69,58,.18); --good-bg: rgba(48,209,88,.18);
+    --glass: rgba(38,38,40,.88); --glass-strong: rgba(34,34,36,.9); --glass-edge: rgba(255,255,255,.12); --glass-shadow: 0 8px 28px rgba(0,0,0,.5);
+  }
+}
+:root.ios[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: rgba(118,118,128,.24); --surface-3: rgba(118,118,128,.36);
+  --line: rgba(84,84,88,.5); --sep: rgba(84,84,88,.6);
+  --text: #ffffff; --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.42);
+  --income: #30d158; --expense: #ff453a; --accent: #0a84ff; --accent-ink: #ffffff; --accent-soft: rgba(10,132,255,.22);
+  --warn: #ffb340; --warn-bg: rgba(255,159,10,.18); --bad-bg: rgba(255,69,58,.18); --good-bg: rgba(48,209,88,.18);
+  --glass: rgba(38,38,40,.88); --glass-strong: rgba(34,34,36,.9); --glass-edge: rgba(255,255,255,.12); --glass-shadow: 0 8px 28px rgba(0,0,0,.5);
+}
+
+.ios body { font-family: -apple-system, "SF Pro Text", "SF Pro Display", BlinkMacSystemFont, "Helvetica Neue", sans-serif; letter-spacing: -.01em; }
+.ios .wrap { padding-bottom: calc(var(--tabh) + var(--sab) + 40px); }
+
+/* ---------- large titles & glass circle buttons ---------- */
+.ios .top { margin: 4px 0 14px; }
+.ios .top h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+.ios .top h1.c { font-size: 22px; font-weight: 700; }
+.ios .hello .v { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+.ios .hello .k { font-size: 15px; }
+.ios .iconbtn {
+  background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border: .5px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--text); font-size: 22px; font-weight: 500;
+}
+.ios .iconbtn:active { transform: scale(.94); opacity: 1; }
+.ios .avatar { width: 44px; height: 44px; border-radius: 22px; box-shadow: var(--glass-shadow); }
+
+/* ---------- inset grouped cards ---------- */
+.ios .card, .ios .tile, .ios .acct { border: none; border-radius: var(--r); box-shadow: none; }
+.ios .card.flush, .ios .card.tight { border-radius: var(--r); }
+.ios .hero { padding: 18px 18px 16px; }
+.ios .hero .lbl { font-size: 15px; font-weight: 500; }
+.ios .hero .big { font-size: 44px; font-weight: 700; letter-spacing: -.03em; }
+.ios .mini { border-radius: 14px; background: var(--surface-2); }
+.ios .mini .k { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 500; }
+.ios .tile { padding: 12px 14px; }
+.ios .tile .k { font-size: 13px; font-weight: 500; }
+.ios .tile .v { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.ios .acct { padding: 12px 14px; min-width: 140px; }
+
+/* rows: separators start after the icon, like Settings */
+.ios .item, .ios .setrow { border-bottom: none; position: relative; min-height: 56px; }
+.ios .item:not(:last-child)::after, .ios .setrow:not(:last-child)::after {
+  content: ""; position: absolute; left: 62px; right: 0; bottom: 0; height: .5px; background: var(--sep);
+}
+.ios .ico { width: 34px; height: 34px; border-radius: 9px; font-size: 18px; }
+.ios .item .nm { font-size: 17px; font-weight: 400; letter-spacing: -.02em; }
+.ios .item .mt { font-size: 14px; }
+.ios .item .amt { font-size: 17px; font-weight: 500; }
+.ios .setrow { font-size: 17px; }
+.ios .setrow .chev { font-size: 24px; font-weight: 300; }
+.ios .bar + .bar { border-top: .5px solid var(--sep); }
+.ios .toggle { border-bottom: .5px solid var(--sep); font-size: 17px; }
+.ios .addline { border-top: .5px solid var(--sep); font-size: 17px; font-weight: 400; text-align: left; padding-left: 16px; }
+.ios .dayhead { text-transform: uppercase; font-size: 12.5px; font-weight: 500; letter-spacing: .02em; color: var(--text-2); padding: 18px 16px 6px; }
+.ios .tag { border-radius: 6px; font-weight: 600; }
+
+.ios .sechead { margin: 24px 4px 8px; }
+.ios .sechead h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.ios button.link, .ios .sechead button.link { font-size: 17px; font-weight: 400; }
+.ios .banner { border-radius: 16px; font-size: 15px; }
+.ios .track { height: 8px; border-radius: 4px; }
+.ios .fill { border-radius: 4px; }
+
+/* ---------- buttons: capsules ---------- */
+.ios .bigbtn { border-radius: 999px; min-height: 52px; font-size: 17px; font-weight: 600; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent); }
+.ios .bigbtn.ghost, .ios .bigbtn.danger { background: var(--surface); border: none; box-shadow: none; font-weight: 500; }
+.ios .bigbtn:active { transform: scale(.97); opacity: 1; }
+.ios .gbtn { border-radius: 999px; border: none; box-shadow: var(--glass-shadow); font-weight: 600; }
+
+/* segmented controls & chips: capsule track with a glass thumb */
+.ios .seg { border-radius: 999px; padding: 3px; background: var(--surface-2); }
+.ios .seg button { border-radius: 999px; font-size: 15px; font-weight: 500; min-height: 40px; color: var(--text); }
+.ios .seg button.on { background: var(--glass-strong); box-shadow: 0 2px 8px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); font-weight: 600; }
+.ios .chip { border: none; background: var(--surface); font-size: 15px; font-weight: 500; color: var(--text); }
+.ios .chip.on { background: var(--accent); color: #fff; }
+
+/* ---------- calendar ---------- */
+.ios #calcard { border-radius: var(--r); padding: 10px 6px 8px !important; }
+.ios .dh { font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.ios .day { border-radius: 14px; }
+.ios .day .dn { font-size: 17px; font-weight: 500; width: 32px; height: 32px; line-height: 32px; border-radius: 16px; }
+.ios .day.today .dn { background: var(--expense); color: #fff; font-weight: 600; }
+.ios .day.sel .dn { background: var(--text); color: var(--bg); font-weight: 600; }
+.ios .day.today.sel .dn { background: var(--expense); color: #fff; }
+.ios .day.sel { background: transparent; }
+.ios .db { font-size: 10.5px; font-weight: 600; }
+
+/* ---------- floating glass tab bar (capsule) + separate glass add button ---------- */
+.ios .tabbar { background: transparent; border-top: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  padding: 0 16px calc(var(--sab) + 10px); pointer-events: none; }
+.ios .tabbar .in { display: flex; align-items: center; gap: 10px; height: 64px; position: relative; padding-right: 74px; pointer-events: none; }
+.ios .tabbar .in::before { content: ""; position: absolute; left: 0; right: 74px; top: 0; bottom: 0; border-radius: 999px;
+  background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: .5px solid var(--glass-edge); box-shadow: var(--glass-shadow); }
+.ios .tb { flex: 1; position: relative; z-index: 1; height: 56px; margin: 0 2px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--text); pointer-events: auto; }
+.ios .tb:first-child { margin-left: 4px; }
+.ios .tb svg { width: 25px; height: 25px; }
+.ios .tb.on { color: var(--accent); background: var(--surface-2); }
+.ios .tbadd { position: absolute; right: 0; top: 0; width: 64px; height: 64px; order: 9; pointer-events: auto; }
+.ios .tbadd span { width: 64px; height: 64px; line-height: 62px; border-radius: 32px; font-size: 32px; font-weight: 300;
+  background: var(--accent);
+  border: .5px solid rgba(255,255,255,.35); box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* ---------- sheets: floating, inset, glass ---------- */
+.ios .scrim { background: rgba(0,0,0,.28); }
+.ios .sheet { left: 8px; right: 8px; bottom: calc(var(--sab) + 8px); border-radius: 34px; max-height: calc(92dvh - var(--sab));
+  background: var(--glass-strong); -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
+  border: .5px solid var(--glass-edge); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+@media (min-width: 576px) { .ios .sheet { left: 0; right: 0; } }
+.ios .grab { background: var(--surface-3); width: 36px; }
+.ios .shead { padding: 6px 12px 8px 22px; }
+.ios .shead h3 { font-size: 20px; font-weight: 700; }
+.ios .sbody { padding: 4px 18px 10px; }
+.ios .sfoot { border-top: none; padding: 8px 14px 14px; }
+.ios .sfoot button { border-radius: 999px; border: none; min-height: 52px; font-size: 17px; font-weight: 600; background: var(--surface-2); }
+.ios .sfoot .primary { background: var(--accent); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent); }
+.ios .sfoot .del { flex: 0 0 52px; }
+
+/* forms: borderless filled fields */
+.ios .fg > label, .ios .fg > .lab { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .02em; margin-left: 16px; }
+.ios .fg input, .ios .fg select, .ios .fg textarea { border: none; background: var(--surface); border-radius: 14px; font-size: 17px; min-height: 50px; }
+.ios .sheet .fg input, .ios .sheet .fg select, .ios .sheet .fg textarea { background: var(--surface-2); }
+.ios .amtwrap input { font-size: 34px; font-weight: 600; letter-spacing: -.02em; min-height: 66px; }
+.ios .amtwrap > span { font-size: 30px; font-weight: 400; }
+.ios .catgrid button { border-radius: 18px; background: var(--surface-2); color: var(--text); font-weight: 500; }
+.ios .catgrid button.on { background: var(--accent-soft); border-color: var(--accent); }
+.ios .catgrid button.newcat { background: transparent; border: 1.5px dashed var(--surface-3); color: var(--accent); }
+.ios .accpick button { border: none; background: var(--surface-2); color: var(--text); font-weight: 500; }
+.ios .accpick button.on { background: var(--accent); color: #fff; }
+.ios .accpick button.on .cdot { box-shadow: 0 0 0 2px #fff; }
+.ios .emojis button { border-radius: 12px; background: var(--surface-2); }
+.ios .sw input:checked + span { background: #34c759; }
+.ios .sw { width: 54px; height: 32px; }
+.ios .sw span::after { width: 28px; height: 28px; border-radius: 14px; }
+.ios .sw input:checked + span::after { transform: translateX(22px); }
+
+/* ---------- toast: glass capsule ---------- */
+.ios .toast { border-radius: 999px; background: var(--glass-strong); color: var(--text);
+  -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  border: .5px solid var(--glass-edge); box-shadow: var(--glass-shadow); bottom: calc(var(--tabh) + var(--sab) + 30px); font-weight: 600; }
+.ios .toast button { color: var(--accent); text-decoration: none; }
+
+/* ---------- sign-in ---------- */
+.ios .logo { border-radius: 22px; }
+.ios .signin h1 { font-size: 36px; font-weight: 700; }

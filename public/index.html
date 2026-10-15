@@ -9,13 +9,22 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Pocket">
-<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161615" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/ios.css">
+<script>
+  // Apply the chosen look (iOS by default) before the page draws, so it never flashes the other style.
+  (function () {
+    var s = "ios";
+    try { var v = localStorage.getItem("pocket.style"); if (v) s = JSON.parse(v); } catch (e) {}
+    if (s !== "classic") document.documentElement.classList.add("ios");
+  })();
+</script>
 </head>
 <body>
 <main id="app" class="wrap notabs"><div class="loading"><div class="spin"></div>Opening Pocket…</div></main>

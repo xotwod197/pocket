@@ -96,6 +96,14 @@ function itemIcon(it) {
 }
 
 /* ============================== boot ============================== */
+function applyStyle() {
+  const ios = LS.get("style", "ios") !== "classic";
+  document.documentElement.classList.toggle("ios", ios);
+  const light = document.querySelector('meta[name="theme-color"][media*="light"]'), dark = document.querySelector('meta[name="theme-color"][media*="dark"]');
+  if (light) light.setAttribute("content", ios ? "#f2f2f7" : "#f7f6f3");
+  if (dark) dark.setAttribute("content", ios ? "#000000" : "#161615");
+}
+applyStyle();
 function applyTheme() {
   const t = LS.get("theme", "auto");
   if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t);
@@ -629,6 +637,7 @@ function viewSettings() {
       <span class="tx">${esc(c.name)}<small>${c.kind === "income" ? "Income" : c.budget ? "Budget " + money(c.budget, { cents: false }) + "/month" : "Spending"}</small></span><span class="chev">›</span></button>`).join("")}</div>
     <div class="sechead"><h2>Preferences</h2></div>
     <div class="card">
+      <div class="fg"><span class="lab">Style</span><div class="seg" style="margin:0">${[["ios", "iOS"], ["classic", "Classic"]].map(([v, l]) => `<button class="${LS.get("style", "ios") === v ? "on" : ""}" data-act="style" data-v="${v}">${l}</button>`).join("")}</div></div>
       <div class="fg"><span class="lab">Appearance</span><div class="seg" style="margin:0">${["auto", "light", "dark"].map((v) => `<button class="${theme === v ? "on" : ""}" data-act="theme" data-v="${v}">${v === "auto" ? "Match phone" : v[0].toUpperCase() + v.slice(1)}</button>`).join("")}</div></div>
       <div class="fg" style="margin:0"><label for="bufIn">Safe-to-spend cushion</label><div class="amtwrap sm"><span>$</span><input id="bufIn" inputmode="decimal" value="${Number(d.settings.buffer) || ""}" placeholder="0" data-inp="buffer"></div>
       <p class="hint">Money to always keep aside. It's subtracted from "Safe to spend".</p></div></div>
@@ -1256,6 +1265,7 @@ const ACT = {
   holDel: async (ds) => { await setHolidays((data().settings.holidays || []).filter((h) => h !== ds.v)); $("hList").innerHTML = holList(); },
   addUSHolidays: async () => { await setHolidays([...(data().settings.holidays || []), ...US_HOLIDAYS]); toast("Added US holidays for 2026–2027"); },
   theme: (ds) => { LS.set("theme", ds.v); applyTheme(); render(); },
+  style: (ds) => { LS.set("style", ds.v); applyStyle(); S.restoreScroll = true; render(); },
   exportJson, exportCsv,
   onbDone: finishOnboarding,
   segPick: (ds, el) => {

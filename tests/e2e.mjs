@@ -322,6 +322,22 @@ const run = async () => {
   await shot("17-home-dark");
   await act("theme", '[data-v="auto"]').catch(() => {});
 
+  // ---- style switch (iOS default ↔ Classic) ----
+  const isIos = () => p.evaluate(() => document.documentElement.classList.contains("ios"));
+  ok("iOS style is the default", await isIos());
+  await tap('.avatar[data-act="tab"]');
+  await act("style", '[data-v="classic"]'); await p.waitForTimeout(200);
+  ok("Style → Classic removes iOS look", !(await isIos()));
+  ok("Classic button highlighted", (await p.locator('[data-act="style"].on').innerText()).includes("Classic"));
+  await layoutCheck(p, "settings classic");
+  await p.reload(); await p.waitForTimeout(700);
+  ok("Classic choice survives reload", !(await isIos()));
+  await act("tab", '[data-v="home"]').catch(() => {});
+  await tap('.avatar[data-act="tab"]');
+  await act("style", '[data-v="ios"]'); await p.waitForTimeout(200);
+  ok("Style → iOS restores it", await isIos());
+  await act("tab", '[data-v="home"]');
+
   ok("no JavaScript errors", errors.length === 0, errors.join(" || "));
   await ctx.close();
 
