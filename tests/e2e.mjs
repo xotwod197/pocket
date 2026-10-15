@@ -22,7 +22,9 @@ async function layoutCheck(p, label) {
   const r = await p.evaluate(() => {
     const vw = document.documentElement.clientWidth;
     const over = document.documentElement.scrollWidth > vw + 1;
-    const vis = (e) => { const s = getComputedStyle(e); if (s.display === "none" || s.visibility === "hidden") return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const sheetOpen = !!document.querySelector(".sheet.open");   // the page behind an open sheet is covered and gently scaled back
+    const front = (e) => !sheetOpen || !!e.closest(".sheet");
+    const vis = (e) => { if (!front(e)) return false;  const s = getComputedStyle(e); if (s.display === "none" || s.visibility === "hidden") return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
     const small = [...document.querySelectorAll("button, input:not([type=range]):not([type=checkbox]):not([type=file]), select, label.setrow")]
       .filter(vis).filter((e) => !e.closest(".sheet:not(.open)") && !e.classList.contains("day") && !e.closest(".colors"))
       .filter((e) => e.getBoundingClientRect().height < 40).map((e) => (e.className || e.tagName) + ":" + Math.round(e.getBoundingClientRect().height));

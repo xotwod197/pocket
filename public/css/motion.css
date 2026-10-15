@@ -1,0 +1,132 @@
+/* motion.css — iPhone-style motion for Pocket (works with both the iOS and Classic looks).
+   Springs are real damped-spring curves written with CSS linear(). Everything here switches off
+   when "Reduce Motion" is on in the phone's Accessibility settings. */
+
+:root {
+  --spring-bouncy: linear(0, 0.028, 0.099, 0.199, 0.314, 0.435, 0.554, 0.664, 0.763, 0.849, 0.919, 0.976, 1.018, 1.049, 1.069, 1.08, 1.083, 1.082, 1.077, 1.069, 1.059, 1.049, 1.039, 1.03, 1.021, 1.014, 1.008, 1.003, 0.999, 0.996, 0.995, 0.993, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.997, 1);
+  --spring: linear(0, 0.018, 0.064, 0.13, 0.207, 0.291, 0.377, 0.46, 0.54, 0.614, 0.681, 0.742, 0.794, 0.84, 0.879, 0.912, 0.939, 0.961, 0.978, 0.991, 1.002, 1.009, 1.014, 1.017, 1.019, 1.02, 1.02, 1.019, 1.018, 1.016, 1.015, 1.013, 1.011, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1);
+  --spring-smooth: linear(0, 0.011, 0.039, 0.081, 0.131, 0.187, 0.247, 0.307, 0.367, 0.426, 0.482, 0.536, 0.586, 0.632, 0.675, 0.714, 0.75, 0.782, 0.811, 0.836, 0.859, 0.88, 0.898, 0.913, 0.927, 0.939, 0.949, 0.958, 0.965, 0.972, 0.977, 0.982, 0.986, 0.989, 0.992, 0.994, 0.996, 0.997, 0.998, 0.999, 1);
+  --ease-in: cubic-bezier(.4, 0, .9, .4);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* nothing that slides sideways may ever widen the page (that would let iPhone wobble or zoom) */
+html, body { overflow-x: clip; }
+#app { overflow-x: clip; }
+
+/* ---------------- press feedback: things shrink a touch under your finger and spring back ---------------- */
+:where(button, .acct, .tile, .setrow, .item, .chip, .day, label.sw span) {
+  transition: transform .5s var(--spring-bouncy), background-color .25s ease, color .2s ease, opacity .2s ease, box-shadow .25s ease;
+}
+.pressed { transform: scale(.955); transition-duration: .14s, .1s, .2s, .2s, .2s !important; transition-timing-function: ease-out !important; }
+.bigbtn.pressed, .sfoot button.pressed { transform: scale(.97); }
+.chip.pressed, .catgrid button.pressed, .accpick button.pressed, .emojis button.pressed { transform: scale(.93); }
+.acct.pressed, .tile.pressed, .card.pressed { transform: scale(.975); }
+.iconbtn.pressed, .avatar.pressed { transform: scale(.88); }
+.tbadd.pressed { transform: none; }
+.tbadd span { transition: transform .55s var(--spring-bouncy), box-shadow .3s ease; }
+.tbadd.pressed span { transform: scale(.84); transition-duration: .14s; transition-timing-function: ease-out; }
+.day.pressed { transform: scale(.88); }
+/* list rows highlight instead of shrinking, like iOS tables */
+.item.pressed, .setrow.pressed { transform: none; background-color: var(--surface-2); transition-duration: 0s !important; }
+.seg button.pressed { transform: scale(.94); }
+.tb { transition: color .25s ease; }
+.tb.pressed { transform: none; }
+.tb svg, .tb span { transition: transform .5s var(--spring-bouncy); }
+.tb.pressed svg { transform: scale(.84); transition-duration: .14s; }
+
+/* ---------------- tab bar: a lens glides to the selected tab, and follows your finger ---------------- */
+.tabbar .in { position: relative; touch-action: none; -webkit-user-select: none; user-select: none; }
+.lens { position: absolute; left: 0; top: 50%; height: 46px; margin-top: -23px; width: var(--w, 60px); border-radius: 15px; z-index: 0; pointer-events: none;
+  background: var(--accent-soft); transform: translateX(var(--x, 0)) scale(var(--s, 1));
+  transition: transform .55s var(--spring), width .55s var(--spring), opacity .25s ease, background-color .25s ease, box-shadow .25s ease; }
+.lens.hide { opacity: 0; --s: .7; }
+.lens.instant { transition: none !important; }
+.lens.drag { --s: 1.12; transition: transform .16s ease-out, width .16s ease-out, opacity .2s, background-color .2s, box-shadow .2s; }
+.tb { position: relative; z-index: 1; }
+.tb.hover { color: var(--accent); }
+.ios .lens { height: 56px; margin-top: -28px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); }
+.ios .tb.on { background: transparent; }
+.ios .lens.drag { background: var(--glass-strong); box-shadow: 0 6px 22px rgba(0,0,0,.16), inset 0 0 0 .5px var(--glass-edge); }
+
+/* ---------------- segmented controls & filter chips: the selection slides ---------------- */
+.seg { position: relative; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+.seg > button { position: relative; z-index: 1; }
+.seg.has-thumb > button.on { background: transparent !important; box-shadow: none !important; }
+.seg > .thumb { position: absolute; left: 0; top: 3px; bottom: 3px; width: var(--w, 0); transform: translateX(var(--x, 0)) scale(var(--s, 1)); z-index: 0; pointer-events: none;
+  border-radius: 10px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  transition: transform .5s var(--spring), width .5s var(--spring); }
+.seg > .thumb.instant, [data-pill] > .thumb.instant { transition: none !important; }
+.seg > .thumb.drag { --s: 1.06; transition: transform .14s ease-out, width .14s ease-out; }
+.ios .seg > .thumb { border-radius: 999px; background: var(--glass-strong); box-shadow: 0 2px 8px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); }
+.ios .seg > .thumb.drag { box-shadow: 0 6px 18px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.04); }
+
+[data-pill] { position: relative; }
+[data-pill] > .chip { position: relative; z-index: 1; }
+[data-pill].has-thumb > .chip.on { background: transparent; border-color: transparent; z-index: 2; }
+[data-pill] > .thumb { position: absolute; left: 0; top: 0; height: 40px; width: var(--w, 0); transform: translateX(var(--x, 0)); z-index: 1; pointer-events: none;
+  border-radius: 20px; background: var(--text); transition: transform .5s var(--spring), width .5s var(--spring); }
+.ios [data-pill] > .thumb { background: var(--accent); }
+
+/* ---------------- sheets: spring up, drag down to dismiss, page behind eases back ---------------- */
+.sheet { touch-action: pan-y; }
+.sheet.open { transition: transform .58s var(--spring); }
+.sheet:not(.open) { transition: transform .3s var(--ease-in), visibility 0s linear .3s; }
+.sheet.dragging, .sheet.dragging + .toast, .scrim.dragging { transition: none !important; }
+.scrim { transition: opacity .3s ease; }
+#app { transition: transform .55s var(--spring), filter .4s ease, border-radius .4s ease; transform-origin: 50% var(--oy, 50vh); }
+body.sheet-open #app { transform: scale(calc(1 - .045 * var(--sheetp, 1))); border-radius: 18px; }
+body.sheet-dragging #app { transition: none; }
+.sheet .grab { position: relative; }
+.sheet .grab::before { content: ""; position: absolute; inset: -14px -60px; } /* bigger grab area */
+
+/* ---------------- toasts spring in ---------------- */
+.toast { transition: opacity .22s ease, transform .55s var(--spring-bouncy); }
+
+/* ---------------- switches: the knob springs ---------------- */
+.sw span::after { transition: transform .45s var(--spring-bouncy), width .2s ease; }
+.sw input:active + span::after { width: 34px; }
+.sw input:checked:active + span::after { transform: translateX(16px); }
+.ios .sw input:checked:active + span::after { transform: translateX(16px); }
+
+/* ---------------- swipe a transaction left to delete (or skip a repeating one) ---------------- */
+.card.flush { position: relative; overflow: hidden; }
+.item[data-act="editTx"], .item[data-act="openOcc"] { touch-action: pan-y; }
+.item.swiping, .item.swiped { position: relative; z-index: 1; background-color: var(--surface); }
+.item.swiping { transition: none !important; }
+.item.swiped { transition: transform .5s var(--spring), background-color .2s; }
+.swipe-act { position: absolute; right: 0; z-index: 0; display: flex; justify-content: flex-end; background: var(--expense); overflow: hidden; }
+.swipe-act.skip { background: #ff9500; }
+.swipe-act button { min-width: 88px; height: 100%; border: none; background: transparent; color: #fff; font-size: 15px; font-weight: 600; padding: 0 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform .45s var(--spring-bouncy); }
+.swipe-act button .i { font-size: 20px; line-height: 1; }
+.swipe-act.full button { transform: translateX(calc(-1 * var(--pull, 0px))); }
+
+/* ---------------- calendar: the month follows your finger ---------------- */
+#calcard { touch-action: pan-y; overflow: hidden; }
+#calcard .cal { will-change: transform; }
+.day .dn { transition: background-color .25s ease, color .2s ease; }
+
+/* ---------------- settings: swipe from the left edge to go back ---------------- */
+#app.edge-drag { transition: none; box-shadow: -10px 0 30px rgba(0,0,0,.18); }
+
+/* ---------------- iOS compact title bar that fades in as the big title scrolls away ---------------- */
+.navbar { display: none; }
+.ios .navbar { display: flex; position: fixed; left: 0; right: 0; top: 0; z-index: 40; height: calc(var(--sat) + 44px); padding-top: var(--sat);
+  align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity .2s ease;
+  background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: .5px solid var(--sep); }
+.ios .navbar span { font-size: 17px; font-weight: 600; letter-spacing: -.02em; transform: translateY(6px); transition: transform .35s var(--spring); }
+.ios .navbar.show { opacity: 1; pointer-events: auto; }
+.ios .navbar.show span { transform: none; }
+body.sheet-open .navbar { opacity: 0 !important; }
+
+/* ---------------- progress bars grow when a screen opens ---------------- */
+#app.entering .fill { animation: m-grow .9s var(--spring) both; transform-origin: left center; }
+#app.entering .fill:nth-child(2) { animation-delay: .06s; }
+@keyframes m-grow { from { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
+  #app, body.sheet-open #app { transform: none !important; border-radius: 0 !important; }
+}

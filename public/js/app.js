@@ -2,9 +2,11 @@ import * as F from "./finance.js";
 import { DemoStore, FirebaseStore, isConfigured, newId } from "./store.js";
 import { firebaseConfig } from "./firebase-config.js";
 import { donut, bars, line, ring } from "./charts.js";
+import * as M from "./motion.js";
 
 /* ============================== constants ============================== */
 const APP_NAME = "Pocket";
+const TAB_ORDER = ["home", "calendar", "activity", "plan", "settings"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MON3 = MONTHS.map((m) => m.slice(0, 3));
 const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -147,9 +149,16 @@ function onAuth(user) {
 }
 
 /* ============================== render ============================== */
+let shownMain = false;
 function render() {
   const app = $("app"), tabbar = $("tabbar");
   const keepScroll = window.scrollY;
+  M.beforeRender(app);
+  renderInner(app, tabbar, keepScroll);
+  if (!tabbar.hidden) M.syncLens(tabbar); else shownMain = false;
+  M.afterRender(app, S.tab);
+}
+function renderInner(app, tabbar, keepScroll) {
   if (S.booting) { app.className = "wrap notabs"; app.innerHTML = `<div class="loading"><div class="spin"></div>Opening ${APP_NAME}…</div>`; tabbar.hidden = true; return; }
   if (!S.user) { tabbar.hidden = true; app.className = ""; app.innerHTML = viewSignIn(); return; }
   if (!S.data || !S.data.loaded) { tabbar.hidden = true; app.className = "wrap notabs"; app.innerHTML = `<div class="loading"><div class="spin"></div>Loading your money…</div>`; return; }
@@ -158,9 +167,12 @@ function render() {
   app.className = "wrap";
   const views = { home: viewHome, calendar: viewCalendar, activity: viewActivity, plan: viewPlan, settings: viewSettings };
   app.innerHTML = (views[S.tab] || viewHome)();
-  tabbar.innerHTML = viewTabbar();
-  if (S.tab === "calendar") attachSwipe();
+  // the tab bar is built once and kept, so its lens can glide between tabs
+  if (!tabbar.querySelector(".in")) { tabbar.innerHTML = viewTabbar(); M.bindTabbar(tabbar); }
+  tabbar.querySelectorAll(".tb").forEach((b) => { const on = b.dataset.v === S.tab; b.classList.toggle("on", on); if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  if (S.tab === "calendar") M.attachCalendar($("calcard"));
   if (S.restoreScroll) { window.scrollTo(0, keepScroll); S.restoreScroll = false; }
+  if (!shownMain) { shownMain = true; requestAnimationFrame(() => M.enterTab(app, 0)); }
 }
 
 function viewTabbar() {
@@ -334,7 +346,7 @@ function itemRow(it, o = {}) {
 function accFilterChips(cur, act) {
   const accs = activeAccounts();
   const chip = (v, label) => `<button class="chip${cur === v ? " on" : ""}" data-act="${act}" data-v="${v}">${label}</button>`;
-  return `<div class="chips">${chip("spend", "Spending money")}${chip("all", "All accounts")}${accs.map((a) => chip(a.id, `<span class="cdot" style="background:${a.color}"></span>${esc(a.name)}`)).join("")}</div>`;
+  return `<div class="chips" data-pill="${act}">${chip("spend", "Spending money")}${chip("all", "All accounts")}${accs.map((a) => chip(a.id, `<span class="cdot" style="background:${a.color}"></span>${esc(a.name)}`)).join("")}</div>`;
 }
 function viewCalendar() {
   const d = data(), y = S.vy, m = S.vm, dim = F.daysInMonth(y, m), first = F.weekday(F.ymd(y, m, 1)), t = today();
@@ -379,15 +391,6 @@ function viewCalendar() {
     <div class="card flush">${dayList.length ? dayList.map((it) => itemRow(it)).join("") : `<div class="empty">Nothing on this day.</div>`}
       <button class="addline" data-act="add" data-date="${S.sel}">+ Add to this day</button></div>
     ${S.sel !== t ? `<button class="bigbtn ghost" data-act="goToday">Jump to today</button>` : ""}`;
-}
-function attachSwipe() {
-  const el = $("calcard"); if (!el) return;
-  let sx = 0, sy = 0;
-  el.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  el.addEventListener("touchend", (e) => {
-    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shiftMonth(dx < 0 ? 1 : -1);
-  }, { passive: true });
 }
 function shiftMonth(n) {
   let y = S.vy, m = S.vm + n; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; }
@@ -492,7 +495,7 @@ function viewInsights() {
 /* ------------------------------ plan ------------------------------ */
 function viewPlan() {
   const segs = [["budgets", "Budgets"], ["bills", "Bills"], ["goals", "Goals"], ["debts", "Debts"], ["pay", "Paychecks"]];
-  const head = `<div class="top"><h1>Plan</h1></div><div class="chips">${segs.map(([v, l]) => `<button class="chip${S.planSeg === v ? " on" : ""}" data-act="planSeg" data-v="${v}">${l}</button>`).join("")}</div>`;
+  const head = `<div class="top"><h1>Plan</h1></div><div class="chips" data-pill="plan">${segs.map(([v, l]) => `<button class="chip${S.planSeg === v ? " on" : ""}" data-act="planSeg" data-v="${v}">${l}</button>`).join("")}</div>`;
   const body = { budgets: planBudgets, bills: planBills, goals: planGoals, debts: planDebts, pay: planPay }[S.planSeg] || planBudgets;
   return head + body();
 }
@@ -639,6 +642,7 @@ function viewSettings() {
     <div class="card">
       <div class="fg"><span class="lab">Style</span><div class="seg" style="margin:0">${[["ios", "iOS"], ["classic", "Classic"]].map(([v, l]) => `<button class="${LS.get("style", "ios") === v ? "on" : ""}" data-act="style" data-v="${v}">${l}</button>`).join("")}</div></div>
       <div class="fg"><span class="lab">Appearance</span><div class="seg" style="margin:0">${["auto", "light", "dark"].map((v) => `<button class="${theme === v ? "on" : ""}" data-act="theme" data-v="${v}">${v === "auto" ? "Match phone" : v[0].toUpperCase() + v.slice(1)}</button>`).join("")}</div></div>
+      <div class="toggle" style="margin:-4px 0 12px"><div class="tx">Haptic taps<small>Light taps on tab switches and swipes (iPhone with iOS 18 or newer)</small></div><label class="sw"><input type="checkbox" data-inp="haptics" aria-label="Haptic taps" ${LS.get("haptics", true) ? "checked" : ""}><span></span></label></div>
       <div class="fg" style="margin:0"><label for="bufIn">Safe-to-spend cushion</label><div class="amtwrap sm"><span>$</span><input id="bufIn" inputmode="decimal" value="${Number(d.settings.buffer) || ""}" placeholder="0" data-inp="buffer"></div>
       <p class="hint">Money to always keep aside. It's subtracted from "Safe to spend".</p></div></div>
     <div class="sechead"><h2>Holidays</h2><span class="meta">${(d.settings.holidays || []).length} dates</span></div>
@@ -665,6 +669,7 @@ function openSheet(title, body, foot, onOpen) {
   sh.classList.add("open"); $("scrim").classList.add("open");
   document.body.style.overflow = "hidden"; document.body.classList.add("sheet-open");
   sh.querySelector(".sbody").scrollTop = 0;
+  M.sheetOpened(); M.syncThumbs(sh, false);
   if (onOpen) onOpen(sh);
 }
 function closeSheet() {
@@ -767,6 +772,19 @@ async function saveTx() {
     closeSheet();
     if (S.tab === "calendar") { S.sel = date; S.vy = +date.slice(0, 4); S.vm = +date.slice(5, 7); render(); }
   } catch (e) { btn.disabled = false; btn.textContent = "Save"; toast("Couldn't save: " + (e.code || e.message)); }
+}
+async function deleteTxNow(id) {
+  const t = data().transactions.find((x) => x.id === id); if (!t) return;
+  try {
+    await S.store.removeTx(id, t.date);
+    toast("Deleted " + (t.label || ""), "Undo", async () => { await S.store.putTx({ ...t }); toast("Restored"); });
+  } catch (e) { toast("Couldn't delete: " + (e.code || e.message)); }
+}
+async function skipOccNow(occId) {
+  const [ruleId, nominal] = String(occId).split("@"), r = data().rules.find((x) => x.id === ruleId); if (!r) return;
+  const skips = [...new Set([...(r.skips || []), nominal])];
+  await S.store.put("rules", r.id, stripId({ ...r, skips }));
+  toast("Skipped " + (r.label || ""), "Undo", async () => { const rr = data().rules.find((x) => x.id === ruleId); await S.store.put("rules", ruleId, stripId({ ...rr, skips: (rr.skips || []).filter((x) => x !== nominal) })); });
 }
 async function deleteTx() {
   const id = S.form.id, t = data().transactions.find((x) => x.id === id);
@@ -1226,7 +1244,11 @@ function pickInGrid(el, gridAttr) {
   grid.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el));
 }
 const ACT = {
-  tab: (ds) => { S.tab = ds.v; if (ds.v !== "settings") LS.set("tab", ds.v); if (ds.v === "calendar") { const t = today(); S.vy = +t.slice(0, 4); S.vm = +t.slice(5, 7); S.sel = t; } render(); window.scrollTo(0, 0); },
+  tab: (ds) => {
+    const prev = S.tab; S.tab = ds.v; if (ds.v !== "settings") LS.set("tab", ds.v); if (ds.v === "calendar") { const t = today(); S.vy = +t.slice(0, 4); S.vm = +t.slice(5, 7); S.sel = t; }
+    render(); window.scrollTo(0, 0);
+    if (prev !== ds.v) { M.haptic(); M.enterTab($("app"), Math.sign(TAB_ORDER.indexOf(ds.v) - TAB_ORDER.indexOf(prev))); }
+  },
   add: (ds) => openTxForm(null, ds.date || (S.tab === "calendar" ? S.sel : today())),
   signin: async () => { try { await S.store.signIn(); } catch (e) { if (e && e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") toast("Sign-in failed: " + (e.code || e.message)); } },
   demo: async () => { LS.set("mode", "demo"); if (S.store.kind !== "demo") { S.store = new DemoStore(); S.store.onAuth(onAuth); } await S.store.signIn(); },
@@ -1239,11 +1261,11 @@ const ACT = {
   closeSheet: () => closeSheet(),
   toastAct: async () => { const f = S.undo; S.undo = null; $("toast").classList.remove("show"); if (f) await f(); },
   goPlan: (ds) => { S.tab = "plan"; S.planSeg = ds.v; LS.set("tab", "plan"); LS.set("planSeg", ds.v); render(); window.scrollTo(0, 0); },
-  planSeg: (ds) => { S.planSeg = ds.v; LS.set("planSeg", ds.v); render(); },
-  actSeg: (ds) => { S.actSeg = ds.v; render(); },
-  month: (ds) => shiftMonth(+ds.v),
-  lmonth: (ds) => { let y = S.ly, m = S.lm + +ds.v; if (m > 12) { m = 1; y++; } if (m < 1) { m = 12; y--; } S.ly = y; S.lm = m; render(); },
-  selDay: (ds) => { const v = ds.v; if (v.slice(0, 7) !== F.ymd(S.vy, S.vm, 1).slice(0, 7)) { S.vy = +v.slice(0, 4); S.vm = +v.slice(5, 7); } S.sel = v; S.restoreScroll = true; render(); },
+  planSeg: (ds) => { const keys = ["budgets", "bills", "goals", "debts", "pay"], dir = Math.sign(keys.indexOf(ds.v) - keys.indexOf(S.planSeg)); S.planSeg = ds.v; LS.set("planSeg", ds.v); S.restoreScroll = true; render(); if (dir) { M.haptic(); M.slideContent($("app"), dir, 2); } },
+  actSeg: (ds) => { const dir = ds.v === S.actSeg ? 0 : ds.v === "insights" ? 1 : -1; S.actSeg = ds.v; S.restoreScroll = true; render(); if (dir) { M.haptic(); M.slideContent($("app"), dir, 2); } },
+  month: (ds) => { shiftMonth(+ds.v); M.slideIn(document.querySelector("#calcard .cal"), +ds.v); },
+  lmonth: (ds) => { let y = S.ly, m = S.lm + +ds.v; if (m > 12) { m = 1; y++; } if (m < 1) { m = 12; y--; } S.ly = y; S.lm = m; render(); M.slideContent($("app"), +ds.v); },
+  selDay: (ds) => { const v = ds.v; if (v.slice(0, 7) !== F.ymd(S.vy, S.vm, 1).slice(0, 7)) { S.vy = +v.slice(0, 4); S.vm = +v.slice(5, 7); } const changed = S.sel !== v; S.sel = v; S.restoreScroll = true; render(); if (changed) M.pop(document.querySelector(".day.sel .dn")); },
   goToday: () => { const t = today(); S.vy = +t.slice(0, 4); S.vm = +t.slice(5, 7); S.sel = t; render(); window.scrollTo(0, 0); },
   calAcc: (ds) => { S.calAcc = ds.v; S.restoreScroll = true; render(); },
   fType: (ds) => { S.fType = ds.v; S.restoreScroll = true; render(); },
@@ -1270,13 +1292,14 @@ const ACT = {
   onbDone: finishOnboarding,
   segPick: (ds, el) => {
     const row = el.closest(".seg");
-    if (row) row.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el));
+    if (row) { row.querySelectorAll(":scope > button").forEach((b) => b.classList.toggle("on", b === el)); M.syncThumbs(row.parentElement, true); M.haptic(); }
     const f = S.form; if (!f) return;
     if (ds.seg === "type") { f.type = ds.v; f.categoryId = null; if (ds.v === "transfer" && !f.toAccountId) f.toAccountId = (activeAccounts().find((a) => a.id !== f.accountId) || {}).id || null; refreshTxForm();
       if ($("fKindWrap")) $("fKindWrap").innerHTML = f.type === "expense" ? `<div class="fg"><span class="lab">Type</span>${seg("rkind", f.rkind || "bill", [["bill", "Bill"], ["subscription", "Subscription"]])}</div>` : ""; }
     if (ds.seg === "rkind") f.rkind = ds.v;
     if (ds.seg === "ckind") f.ckind = ds.v;
     if (ds.seg === "payType") { f.payType = ds.v; $("jPayFields").innerHTML = jobPayFields({ payType: ds.v, hours: 40, tax: 20 }, null); jobEstimate(); }
+    M.syncThumbs($("sheet"), true);
   },
   pickCat: (ds, el) => { pickInGrid(el); S.form.categoryId = ds.v; },
   newCatOpen: (ds) => { const box = $("newCatBox"); if (!box) return; box.innerHTML = newCatForm(ds.kind); setTimeout(() => { const i = $("ncName"); if (i) { i.focus(); i.scrollIntoView({ block: "center", behavior: "smooth" }); } }, 50); },
@@ -1331,6 +1354,7 @@ const INP = {
       };
     } catch (e) { toast(e.message); }
   },
+  haptics: (el) => { LS.set("haptics", el.checked); M.setHaptics(el.checked); if (el.checked) M.haptic(); },
   buffer: (el) => { clearTimeout(qTimer); qTimer = setTimeout(() => S.store.setSettings({ buffer: parseAmt(el.value) || 0 }), 600); },
   freq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = freqExtra(S.form.id ? data().rules.find((r) => r.id === S.form.id) : null); },
   jobFreq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = jobFreqExtra(null); $("jStartLab").textContent = el.value === "biweekly" || el.value === "weekly" ? "Next payday" : "Starting"; jobEstimate(); },
@@ -1354,6 +1378,18 @@ document.addEventListener("change", (e) => { const el = e.target.closest("[data-
 let lastDay = today();
 setInterval(() => { if (today() !== lastDay) { lastDay = today(); MEMO = new Map(); render(); } }, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && today() !== lastDay) { lastDay = today(); MEMO = new Map(); render(); } });
+
+M.setHaptics(LS.get("haptics", true));
+M.init({
+  onTab: (v) => ACT.tab({ v }),
+  shiftMonth: (n) => shiftMonth(n),
+  onDeleteTx: deleteTxNow,
+  onSkipOcc: skipOccNow,
+  closeSheet: () => closeSheet(),
+  canGoBack: () => S.tab === "settings" && !!S.user,
+  goBack: () => ACT.tab({ v: "home" })
+});
+M.bindSheet($("sheet"), $("scrim"));
 
 export const __test = { S, ACT, INP, render, data, toast };
 boot();
