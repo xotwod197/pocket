@@ -248,6 +248,50 @@ const browser = await chromium.launch();
   await T.ctx.close();
 }
 
+// ---- deleting a category asks where its items go (e.g. "Sent to Cash App" → transfers) ----
+{
+  const T = await setup(browser); const { p, tap } = T;
+  await p.evaluate(async () => {
+    const { __test } = await import("/js/app.js"); const st = __test.S.store;
+    await st.put("accounts", "cashapp1", { name: "Cash App", type: "wallet", emoji: "💸", color: "#5DCAA5", order: 2, includeInSafe: false });
+    await st.put("categories", "cashapp", { name: "Sent to Cash App", emoji: "💸", color: "#AFA9EC", kind: "expense", budget: 0, order: 50 });
+    await st.put("categories", "paypal", { name: "Sent to PayPal", emoji: "🅿️", color: "#FAC775", kind: "expense", budget: 0, order: 51 });
+  });
+  await sleep(300);
+  for (const [l, c] of [["Sent to Cash App", "cashapp"], ["Sent to Cash App", "cashapp"], ["Sent to PayPal", "paypal"]]) {
+    await tap(".tbadd"); await sleep(400); await p.fill("#fAmt", "20"); await p.fill("#fLabel", l);
+    await tap(`[data-act="pickAcc"][data-field="accountId"]:has-text("Main")`).catch(() => {});
+    await tap(`[data-act="pickCat"][data-v="${c}"]`); await tap('[data-act="saveTx"]'); await sleep(400);
+  }
+  const db = () => p.evaluate(() => JSON.parse(localStorage.getItem("pocket-demo-v1")));
+  await tap('.avatar[data-act="tab"]'); await sleep(500);
+  await tap('[data-act="editCategory"][data-id="cashapp"]'); await sleep(400);
+  await tap('#sheet [data-act="delCategory"]'); await sleep(500);
+  ok("deleting a used category asks where its items go", (await p.locator("#sheet").innerText()).includes("2 items use"));
+  ok("…and suggests turning them into transfers to Cash App", (await p.locator("#cdTo").inputValue()) === "acc:cashapp1");
+  ok("…explaining what that means", (await p.locator("#cdHint").innerText()).includes("money moved into Cash App"));
+  await tap('[data-act="catDelGo"]'); await sleep(500);
+  let d = await db();
+  const moved = Object.values(d.tx).filter((t) => t.label === "Sent to Cash App");
+  ok("Sent to Cash App entries became transfers to Cash App", moved.length === 2 && moved.every((t) => t.type === "transfer" && t.toAccountId === "cashapp1" && !t.categoryId), JSON.stringify(moved[0]));
+  ok("the category is gone", !d.categories.cashapp);
+  // move into another category instead
+  await tap('[data-act="editCategory"][data-id="paypal"]'); await sleep(400);
+  await tap('#sheet [data-act="delCategory"]'); await sleep(500);
+  ok("no PayPal account → defaults to a category", !(await p.locator("#cdTo").inputValue()).startsWith("acc:"));
+  await p.selectOption("#cdTo", "shop"); await sleep(150);
+  await tap('[data-act="catDelGo"]'); await sleep(500);
+  d = await db();
+  ok("Sent to PayPal entry moved to Shopping", Object.values(d.tx).filter((t) => t.label === "Sent to PayPal").every((t) => t.categoryId === "shop" && t.type === "expense") && !d.categories.paypal);
+  // unused category: plain confirm
+  p.once("dialog", (x) => x.accept());
+  await tap('[data-act="editCategory"][data-id="travel"]'); await sleep(400);
+  await tap('#sheet [data-act="delCategory"]'); await sleep(500);
+  ok("unused category deletes with a simple confirm", !(await db()).categories.travel);
+  ok("category delete: no JavaScript errors", T.errors.length === 0, T.errors.join(" | "));
+  await T.ctx.close();
+}
+
 await browser.close();
 console.log(results.join("\n")); console.log(`\n${results.length - failures} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);

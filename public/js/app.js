@@ -1107,15 +1107,56 @@ async function saveCategory() {
   closeSheet(); toast("Saved");
 }
 async function deleteCategory() {
-  const id = S.form.id, d = data();
-  const n = d.transactions.filter((t) => t.categoryId === id).length + d.rules.filter((r) => r.categoryId === id).length;
-  if (!confirm(n ? `${n} item(s) use this category. They'll show as "Misc". Delete it?` : "Delete this category?")) return;
-  if (n) {
-    const tx = d.transactions.filter((t) => t.categoryId === id).map((t) => ({ ...t, categoryId: "misc" }));
-    const docs = d.rules.filter((r) => r.categoryId === id).map((r) => ({ col: "rules", id: r.id, data: { ...stripId(r), categoryId: "misc" } }));
-    await S.store.putMany({ tx, docs });
+  const id = S.form.id, d = data(), c = d.categories.find((x) => x.id === id) || { id, name: id, kind: "expense" };
+  const txs = d.transactions.filter((t) => t.categoryId === id), rules = d.rules.filter((r) => r.categoryId === id);
+  if (!txs.length && !rules.length) {
+    if (!confirm("Delete this category?")) return;
+    await S.store.remove("categories", id); closeSheet(); toast("Deleted"); return;
   }
-  await S.store.remove("categories", id); closeSheet(); toast("Deleted");
+  // items still use it: ask where they should go instead of silently dumping them in "Misc"
+  S.form = { kind: "catDelete", id };
+  const others = sortedCats(c.kind).filter((x) => x.id !== id);
+  const accs = c.kind === "expense" ? activeAccounts() : [];
+  const guess = accs.find((a) => /cash ?app/i.test(c.name) ? /cash ?app/i.test(a.name) : /paypal/i.test(c.name) ? /paypal/i.test(a.name) && a.type !== "savings" : false);
+  const def = guess ? "acc:" + guess.id : (others.find((x) => x.id === "misc") || others[0] || {}).id;
+  const n = txs.length + rules.length;
+  const body = `<p class="sub" style="margin:0 0 14px;font-size:15px"><b>${n}</b> ${n === 1 ? "item uses" : "items use"} “${esc(c.name)}”. Where should ${n === 1 ? "it" : "they"} go?</p>
+    <div class="fg"><label for="cdTo">Move to</label><select id="cdTo" data-inp="cdTo">
+      <optgroup label="Categories">${others.map((x) => `<option value="${x.id}" ${def === x.id ? "selected" : ""}>${esc(x.emoji || "")} ${esc(x.name)}</option>`).join("")}</optgroup>
+      ${accs.length ? `<optgroup label="Turn into transfers to">${accs.map((a) => `<option value="acc:${a.id}" ${def === "acc:" + a.id ? "selected" : ""}>→ ${esc(a.name)}</option>`).join("")}</optgroup>` : ""}
+    </select></div>
+    <p class="hint" id="cdHint"></p>`;
+  openSheet("Delete “" + esc(c.name) + "”", body, `<button data-act="closeSheet">Cancel</button><button class="primary danger-bg" data-act="catDelGo" id="saveBtn">Delete & move</button>`, () => catDelHint());
+}
+function catDelHint() {
+  const el = $("cdHint"), v = val("cdTo"); if (!el) return;
+  if (!v.startsWith("acc:")) { el.textContent = "Past entries keep their dates and amounts, just under the new category."; return; }
+  const a = acc(v.slice(4)), counts = spendSet().has(a.id);
+  el.innerHTML = `They'll stop counting as spending and become money moved into <b>${esc(a.name)}</b>.` +
+    (counts ? ` Since ${esc(a.name)} counts as spending money, log what you spend from it too, or turn off “counts as spending money” for that account in Settings, so Safe to spend stays accurate.` : "");
+}
+async function catDelGo() {
+  const id = S.form.id, to = val("cdTo"), d = data(); if (!to) return toast("Pick where to move them.");
+  const btn = $("saveBtn"); btn.disabled = true; btn.textContent = "Moving…";
+  let kept = 0;
+  const tx = [], docs = [];
+  for (const t of d.transactions.filter((x) => x.categoryId === id)) {
+    if (to.startsWith("acc:")) {
+      const dest = to.slice(4);
+      if (dest === t.accountId) { tx.push({ ...t, categoryId: "misc" }); kept++; }
+      else tx.push({ ...t, type: "transfer", toAccountId: dest, categoryId: null });
+    } else tx.push({ ...t, categoryId: to });
+  }
+  for (const r of d.rules.filter((x) => x.categoryId === id)) {
+    if (to.startsWith("acc:") && to.slice(4) !== r.accountId) docs.push({ col: "rules", id: r.id, data: { ...stripId(r), type: "transfer", toAccountId: to.slice(4), categoryId: null, kind: "transfer" } });
+    else docs.push({ col: "rules", id: r.id, data: { ...stripId(r), categoryId: to.startsWith("acc:") ? "misc" : to } });
+  }
+  try {
+    await S.store.putMany({ tx, docs });
+    await S.store.remove("categories", id);
+    closeSheet();
+    toast(to.startsWith("acc:") ? `Turned ${tx.length - kept} into transfers to ${acc(to.slice(4)).name}` + (kept ? ` (${kept} moved to Misc)` : "") : `Moved to ${cat(to).name}`);
+  } catch (e) { btn.disabled = false; btn.textContent = "Delete & move"; toast("Couldn't delete: " + (e.code || e.message)); }
 }
 
 /* ------------------------------ holidays ------------------------------ */
@@ -1281,7 +1322,7 @@ const ACT = {
   goalAdd: (ds) => openGoalAdd(ds.id), saveGoalAdd,
   editDebt: (ds) => openDebtForm(ds.id), saveDebt, delDebt: async () => { if (!confirm("Delete this debt?")) return; await S.store.remove("debts", S.form.id); closeSheet(); toast("Deleted"); },
   editAccount: (ds) => openAccountForm(ds.id), saveAccount, delAccount: deleteAccount,
-  editCategory: (ds) => openCategoryForm(ds.id), saveCategory, delCategory: deleteCategory,
+  editCategory: (ds) => openCategoryForm(ds.id), saveCategory, delCategory: deleteCategory, catDelGo,
   editHolidays: openHolidays,
   holAdd: async () => { const v = val("hNew"); if (!v) return toast("Pick a date."); await setHolidays([...(data().settings.holidays || []), v]); $("hList").innerHTML = holList(); $("hNew").value = ""; },
   holDel: async (ds) => { await setHolidays((data().settings.holidays || []).filter((h) => h !== ds.v)); $("hList").innerHTML = holList(); },
@@ -1355,6 +1396,7 @@ const INP = {
     } catch (e) { toast(e.message); }
   },
   haptics: (el) => { LS.set("haptics", el.checked); M.setHaptics(el.checked); if (el.checked) M.haptic(); },
+  cdTo: () => catDelHint(),
   buffer: (el) => { clearTimeout(qTimer); qTimer = setTimeout(() => S.store.setSettings({ buffer: parseAmt(el.value) || 0 }), 600); },
   freq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = freqExtra(S.form.id ? data().rules.find((r) => r.id === S.form.id) : null); },
   jobFreq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = jobFreqExtra(null); $("jStartLab").textContent = el.value === "biweekly" || el.value === "weekly" ? "Next payday" : "Starting"; jobEstimate(); },

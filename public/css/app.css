@@ -299,3 +299,4 @@ body.sheet-open .toast.show { transform: translateX(-50%) translateY(0); }
 .catgrid button.newcat { background: transparent; border: 2px dashed var(--line); color: var(--accent); }
 .catgrid button.newcat .e { font-size: 22px; font-weight: 300; }
 .catgrid button.newcat:active { background: var(--accent-soft); }
+.sfoot .primary.danger-bg { background: var(--expense); }

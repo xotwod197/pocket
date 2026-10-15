@@ -165,3 +165,4 @@
 /* ---------- sign-in ---------- */
 .ios .logo { border-radius: 22px; }
 .ios .signin h1 { font-size: 36px; font-weight: 700; }
+.ios .sfoot .primary.danger-bg { background: var(--expense); box-shadow: 0 6px 18px color-mix(in srgb, var(--expense) 30%, transparent); }
