@@ -656,7 +656,7 @@ function viewSettings() {
     <div class="card"><div class="goalcard">${avatar().replace('data-act="tab" data-v="settings"', 'tabindex="-1"')}<div class="info"><div class="nm">${esc(u.displayName || "You")}</div><div class="mt">${esc(u.email || (S.store.kind === "demo" ? "Demo mode · data on this device only" : ""))}</div></div></div></div>
     <div class="sechead"><h2>Accounts</h2><button class="link" data-act="editAccount">+ Add</button></div>
     <div class="card flush">${accs.map((a) => `<button class="setrow" data-act="editAccount" data-id="${a.id}"><span class="ico" style="background:${a.color}40">${esc(a.emoji || "🏦")}</span>
-      <span class="tx">${esc(a.name)}${a.archived ? ' <span class="tag">hidden</span>' : ""}<small>${ACCOUNT_TYPES[a.type] || ""}${a.includeInSafe === false || a.type === "savings" || a.type === "credit" ? "" : " · counts as spending money"}</small></span>
+      <span class="tx">${esc(a.name)}${a.archived ? ' <span class="tag">hidden</span>' : ""}<small>${ACCOUNT_TYPES[a.type] || ""}${a.includeInSafe === false || a.type === "savings" || a.type === "credit" ? "" : " · spending money"}</small></span>
       <span class="num ${bals[a.id] < 0 ? "exp" : ""}">${money(bals[a.id])}</span></button>`).join("") || `<div class="empty">No accounts yet.</div>`}</div>
     <div class="sechead"><h2>Categories & budgets</h2><button class="link" data-act="editCategory">+ Add</button></div>
     <div class="card flush">${sortedCats().map((c) => `<button class="setrow" data-act="editCategory" data-id="${c.id}"><span class="ico" style="background:${c.color}40">${esc(c.emoji || "📦")}</span>
@@ -699,9 +699,35 @@ function settingsDesktop() {
 }
 
 /* ============================== sheets ============================== */
+const DEL_LABEL = { delTx: "Delete Transaction", delRule: "Delete Repeating Item", delGoal: "Delete Goal", delDebt: "Delete Debt", delAccount: "Delete Account", delCategory: "Delete Category" };
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+// iPhone (iOS 27): ✕ on the left, title in the middle, the main action as a round ✓ on the right,
+// Delete as a red button at the end of the form. Computers keep macOS-style buttons along the bottom.
+function sheetIOS27(title, body, foot) {
+  const t = document.createElement("template"); t.innerHTML = foot || "";
+  const btns = [...t.content.querySelectorAll("button")];
+  const primary = btns.find((b) => b.classList.contains("primary"));
+  const del = btns.find((b) => b.classList.contains("del"));
+  const others = btns.filter((b) => b !== primary && b !== del && b.dataset.act !== "closeSheet");
+  let right = "";
+  if (primary) {
+    const label = primary.textContent.trim();
+    const isCheck = /^(Save|Done|Add)$/i.test(label);
+    primary.classList.add(isCheck ? "chk" : "cap");
+    primary.setAttribute("aria-label", label);
+    if (isCheck) primary.innerHTML = CHECK_SVG;
+    right = primary.outerHTML;
+  }
+  const tail = others.map((b) => { b.classList.add("bigbtn", "ghost", "sheetmore"); return b.outerHTML; }).join("") +
+    (del ? `<button class="sheetdel" data-act="${del.dataset.act}">${DEL_LABEL[del.dataset.act] || "Delete"}</button>` : "");
+  return `<div class="grab"></div><div class="shead ios27"><button class="iconbtn" data-act="closeSheet" aria-label="Close">✕</button><h3>${title}</h3>${right || "<span></span>"}</div>
+    <div class="sbody">${body}${tail}</div>`;
+}
 function openSheet(title, body, foot, onOpen) {
   const sh = $("sheet");
-  sh.innerHTML = `<div class="grab"></div><div class="shead"><h3>${title}</h3><button class="iconbtn" data-act="closeSheet" aria-label="Close">✕</button></div>
+  const ios27 = document.documentElement.classList.contains("ios") && !D.isDesk();
+  sh.classList.toggle("ios27", ios27);
+  sh.innerHTML = ios27 ? sheetIOS27(title, body, foot) : `<div class="grab"></div><div class="shead"><h3>${title}</h3><button class="iconbtn" data-act="closeSheet" aria-label="Close">✕</button></div>
     <div class="sbody">${body}</div>${foot ? `<div class="sfoot">${foot}</div>` : ""}`;
   sh.classList.add("open");
   if (D.paneMode()) { sh.setAttribute("aria-modal", "false"); D.paneOpened(sh); }   // desktop: details open in the right-hand pane, page stays usable
@@ -806,7 +832,7 @@ async function saveTx() {
   } else if (!f.categoryId) f.categoryId = f.type === "income" ? "income" : "misc";
   if (!label) label = f.type === "transfer" ? "Transfer to " + acc(f.toAccountId).name : cat(f.categoryId).name;
   const repeat = $("fRepeat") ? $("fRepeat").value : "none";
-  const btn = $("saveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  const btn = $("saveBtn"), isChk = btn.classList.contains("chk"); btn.disabled = true; if (!isChk) btn.textContent = "Saving…";
   try {
     if (repeat !== "none") {
       const r = { label, amount, type: f.type, accountId: f.accountId, toAccountId: f.type === "transfer" ? f.toAccountId : null, categoryId: f.type === "transfer" ? null : f.categoryId,
@@ -821,7 +847,7 @@ async function saveTx() {
     }
     closeSheet();
     if (S.tab === "calendar") { S.sel = date; S.vy = +date.slice(0, 4); S.vm = +date.slice(5, 7); render(); }
-  } catch (e) { btn.disabled = false; btn.textContent = "Save"; toast("Couldn't save: " + (e.code || e.message)); }
+  } catch (e) { btn.disabled = false; if (!isChk) btn.textContent = "Save"; toast("Couldn't save: " + (e.code || e.message)); }
 }
 async function deleteTxNow(id) {
   const t = data().transactions.find((x) => x.id === id); if (!t) return;

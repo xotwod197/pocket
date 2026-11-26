@@ -166,3 +166,85 @@
 .ios .logo { border-radius: 22px; }
 .ios .signin h1 { font-size: 36px; font-weight: 700; }
 .ios .sfoot .primary.danger-bg { background: var(--expense); box-shadow: 0 6px 18px color-mix(in srgb, var(--expense) 30%, transparent); }
+
+/* =====================================================================================
+   iOS 27 refresh — values taken from Apple's iOS 27 UI Kit (design tokens + Inspect):
+   systemBlue #0088FF / #0091FF, separators 12% black/white, secondary label 60%,
+   grouped cards 26pt corners, list rows 52pt, switches 64×28 with a 38×24 pill knob,
+   tab bar capsule 62pt tall 21pt from the edges with a 54pt selection pill and 10pt labels,
+   segmented controls 36pt, sheets with ✕ on the left and a blue ✓ on the right,
+   SF Pro text styles at normal tracking, section headers in sentence case.
+   ===================================================================================== */
+:root.ios {
+  --accent: #0088ff; --accent-soft: rgba(0,136,255,.12); --sep: rgba(0,0,0,.12); --line: rgba(0,0,0,.08);
+  --text-2: rgba(60,60,67,.6); --green: #34c759; --red: #ff383c; --fill-2: rgba(120,120,128,.16); --r: 26px;
+}
+@media (prefers-color-scheme: dark) {
+  :root.ios:not([data-theme="light"]) { --accent: #0091ff; --accent-soft: rgba(0,145,255,.22); --sep: rgba(255,255,255,.12); --line: rgba(255,255,255,.08);
+    --text-2: rgba(235,235,245,.6); --green: #30d158; --red: #ff4245; --fill-2: rgba(120,120,128,.32); }
+}
+:root.ios[data-theme="dark"] { --accent: #0091ff; --accent-soft: rgba(0,145,255,.22); --sep: rgba(255,255,255,.12); --line: rgba(255,255,255,.08);
+  --text-2: rgba(235,235,245,.6); --green: #30d158; --red: #ff4245; --fill-2: rgba(120,120,128,.32); }
+
+/* SF Pro already sets its own tracking; Apple's text styles use 0 */
+.ios body, .ios .top h1, .ios .hello .v, .ios .hero .big, .ios .tile .v, .ios .item .nm, .ios .sechead h2, .ios .amtwrap input { letter-spacing: 0; }
+.ios .top h1 { font-size: 34px; font-weight: 700; }                 /* Large Title */
+.ios .top h1.c { font-size: 20px; font-weight: 600; }               /* Title 3 */
+.ios .sechead h2 { font-size: 22px; font-weight: 700; }             /* Title 2 (extra-prominent header) */
+.ios .hero .big { letter-spacing: -.01em; }
+
+/* section & field headers: sentence case, Headline/Subheadline weight, secondary label */
+.ios .dayhead { text-transform: none; font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--text-2); padding: 18px 16px 6px; }
+.ios .fg > label, .ios .fg > .lab { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 600; color: var(--text-2); margin: 0 0 6px 16px; }
+.ios .mini .k { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--text-2); }
+
+/* grouped lists */
+.ios .card, .ios .tile, .ios .acct, .ios .card.flush, .ios .card.tight, .ios #calcard { border-radius: var(--r); }
+.ios .setrow { min-height: 52px; }
+.ios .item:not(:last-child)::after, .ios .setrow:not(:last-child)::after { height: .5px; background: var(--sep); }
+.ios .day.today .dn, .ios .day.today.sel .dn { background: var(--red); }
+
+/* switches: 64×28 track, 38×24 pill knob */
+.ios .sw { width: 64px; height: 28px; }
+.ios .sw span { border-radius: 14px; background: var(--fill-2); }
+.ios .sw span::after { top: 2px; left: 2px; width: 38px; height: 24px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15), 0 0 0 .5px rgba(0,0,0,.04); }
+.ios .sw input:checked + span { background: var(--green); }
+.ios .sw input:checked + span::after { transform: translateX(22px); }
+
+/* segmented controls: 36pt capsule */
+.ios .seg { padding: 2px; }
+.ios .seg button { min-height: 40px; font-size: 15px; }   /* 44pt track: Apple draws 36pt, but the buttons keep a 40pt thumb-friendly height */
+.ios .seg > .thumb { top: 2px; bottom: 2px; }
+
+/* tab bar: 62pt capsule, 21pt margins, 54pt selection pill, 10pt semibold labels */
+.ios .tabbar { padding: 0 21px calc(var(--sab) + 8px); }
+.ios .tabbar .in { height: 62px; padding-right: 72px; }
+.ios .tabbar .in::before { right: 72px; }
+.ios .tb { height: 54px; font-size: 10px; font-weight: 600; letter-spacing: -.01em; }
+.ios .tb:first-child { margin-left: 4px; }
+.ios .lens { height: 54px; margin-top: -27px; background: var(--fill-2); }
+.ios .tbadd { width: 62px; height: 62px; }
+.ios .tbadd span { width: 62px; height: 62px; line-height: 60px; border-radius: 31px; }
+
+/* sheets: ✕ on the left, centered title, blue ✓ on the right; no bottom bar */
+.ios .shead.ios27 { display: grid; grid-template-columns: 44px 1fr minmax(44px, auto); align-items: center; gap: 8px; padding: 6px 14px 10px; }
+.ios .shead.ios27 h3 { margin: 0; text-align: center; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios .shead.ios27 .iconbtn { width: 44px; height: 44px; font-size: 17px; }
+.ios .shead .chk { width: 44px; height: 44px; border-radius: 22px; border: none; padding: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); justify-self: end; }
+.ios .shead .chk svg { width: 22px; height: 22px; }
+.ios .shead .chk.danger-bg { background: var(--expense); box-shadow: 0 4px 14px color-mix(in srgb, var(--expense) 35%, transparent); }
+.ios .shead .cap { height: 44px; border-radius: 22px; border: none; padding: 0 18px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; justify-self: end; white-space: nowrap; }
+.ios .shead .cap.danger-bg { background: var(--expense); }
+.ios .shead button:disabled { opacity: .5; }
+.ios .sheet.ios27 .sbody { padding-bottom: calc(22px + var(--sab)); }
+.ios .sheetdel { display: block; width: 100%; min-height: 52px; margin: 18px 0 4px; border: none; border-radius: 26px; background: var(--surface); color: var(--expense); font-size: 17px; font-weight: 400; }
+.ios .sheet .sheetdel { background: var(--surface-2); }
+.ios .sheetmore { margin-top: 12px; }
+/* header links ("+ Add", "See all") get Apple's 44pt minimum tap height without moving the header */
+.ios .sechead button.link { min-height: 44px; margin: -4px -6px -4px 0; padding: 0 6px; display: inline-flex; align-items: center; }
+/* sheets are nearly opaque in iOS 27 (nothing behind should show through the form) */
+:root.ios { --sheet-bg: rgba(247,247,250,.97); }
+@media (prefers-color-scheme: dark) { :root.ios:not([data-theme="light"]) { --sheet-bg: rgba(28,28,30,.97); } }
+:root.ios[data-theme="dark"] { --sheet-bg: rgba(28,28,30,.97); }
+.ios .sheet { background: var(--sheet-bg); }

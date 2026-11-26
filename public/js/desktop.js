@@ -84,11 +84,11 @@ document.addEventListener("keydown", (e) => {
     if (k === ",") { e.preventDefault(); H.act("tab", { v: "settings" }); return; }
     if (/^[1-4]$/.test(k)) { e.preventDefault(); H.act("tab", { v: ["home", "calendar", "activity", "plan"][+k - 1] }); return; }
     if (k === "z" && !typing(e.target) && H.canUndo && H.canUndo()) { e.preventDefault(); H.act("toastAct", {}); return; }
-    if (k === "enter" && document.querySelector("#sheet .sfoot .primary")) { e.preventDefault(); document.querySelector("#sheet .sfoot .primary").click(); return; }
+    if (k === "enter" && document.querySelector("#sheet .sfoot .primary, #sheet .shead .primary")) { e.preventDefault(); document.querySelector("#sheet .sfoot .primary, #sheet .shead .primary").click(); return; }
   }
   // Return saves the open form (the default button on a Mac), unless you're in a multi-line box or a search
   if (e.key === "Enter" && !mod && typing(e.target) && e.target.closest("#sheet") && e.target.tagName === "INPUT" && e.target.type !== "search" && e.target.id !== "ncName") {
-    const p = document.querySelector("#sheet .sfoot .primary"); if (p && !p.disabled) { e.preventDefault(); p.click(); } return;
+    const p = document.querySelector("#sheet .sfoot .primary, #sheet .shead .primary"); if (p && !p.disabled) { e.preventDefault(); p.click(); } return;
   }
   if (typing(e.target) || mod || e.altKey) return;
   // ← → change month on Calendar and Activity

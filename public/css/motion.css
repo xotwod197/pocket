@@ -87,6 +87,7 @@ body.sheet-dragging #app { transition: none; }
 .sw span::after { transition: transform .45s var(--spring-bouncy), width .2s ease; }
 .sw input:active + span::after { width: 34px; }
 .sw input:checked:active + span::after { transform: translateX(16px); }
+.ios .sw input:active + span::after { width: 44px; }
 .ios .sw input:checked:active + span::after { transform: translateX(16px); }
 
 /* ---------------- swipe a transaction left to delete (or skip a repeating one) ---------------- */
