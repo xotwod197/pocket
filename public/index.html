@@ -18,16 +18,21 @@
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/ios.css">
 <link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/desktop.css">
 <script>
   // Apply the chosen look (iOS by default) before the page draws, so it never flashes the other style.
   (function () {
     var s = "ios";
     try { var v = localStorage.getItem("pocket.style"); if (v) s = JSON.parse(v); } catch (e) {}
     if (s !== "classic") document.documentElement.classList.add("ios");
+    // computers and large tablets get the macOS layout (sidebar, detail pane) from the first frame
+    if (window.innerWidth >= 900) document.documentElement.classList.add("desk");
+    if (window.innerWidth >= 1180) document.documentElement.classList.add("pane");
   })();
 </script>
 </head>
 <body>
+<aside class="sidebar" id="sidebar" aria-label="Sidebar" hidden></aside>
 <main id="app" class="wrap notabs"><div class="loading"><div class="spin"></div>Opening Pocket…</div></main>
 <nav class="tabbar" id="tabbar" hidden></nav>
 <div class="scrim" id="scrim"></div>

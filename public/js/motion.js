@@ -233,7 +233,7 @@ export function bindSheet(sheet, scrim) {
   let st = null;
   const app = () => document.getElementById("app");
   sheet.addEventListener("touchstart", (e) => {
-    if (!sheet.classList.contains("open") || e.touches.length > 1) { st = null; return; }
+    if (!sheet.classList.contains("open") || e.touches.length > 1 || document.documentElement.classList.contains("pane")) { st = null; return; }   // the desktop detail pane doesn't drag
     const t = e.target;
     if (t.closest("input[type=range], select, textarea, .hscroll, .chips")) { st = null; return; }
     const body = sheet.querySelector(".sbody");

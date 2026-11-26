@@ -9,6 +9,7 @@ A phone-first expense tracker you install on your iPhone home screen. Sign in wi
 - Multiple accounts (bank, Cash App, PayPal, savings, credit card) with transfers between them
 - Import your old tracker backup; export everything any time (backup file or spreadsheet)
 - Works offline; light and dark mode
+- **On a computer** (MacBook, Windows PC, iPad landscape): a macOS-style window with a sidebar, a detail pane on the right, keyboard shortcuts (⌘/Ctrl+N, ⌘/Ctrl+F, ⌘/Ctrl+1–4) and right-click menus. Install it from Safari (**File → Add to Dock**) or Chrome/Edge (**Install app**)
 
 **Cost:** $0. GitHub (free) stores the code and publishes it automatically. Firebase's free Spark plan handles sign-in, storage (1 GB) and hosting.
 
@@ -101,11 +102,14 @@ public/            the app (plain HTML/CSS/JS modules, no build step)
   js/finance.js    all money/date math, no DOM, unit tested
   js/store.js      Firebase (Google sign-in + Firestore) and an on-device demo store
   js/app.js        screens and interactions
+  js/motion.js     iPhone gestures and spring animations
+  js/desktop.js    computer layout: detail pane, shortcuts, right-click menus, install
+  css/desktop.css  macOS-style layout (applies at 900px and wider)
   js/charts.js     small SVG charts
 firestore.rules    database security rules
 tests/             unit tests + iPhone end-to-end tests (Playwright)
 ```
 - Unit tests: `npm test`
 - Run locally: `cd public && python3 -m http.server 8765`, then open `http://localhost:8765/?demo=1`
-- End-to-end (needs Playwright): `node tests/e2e.mjs shots` and `node tests/e2e-firebase.mjs`
+- End-to-end (needs Playwright): `node tests/e2e.mjs shots`, `node tests/e2e-firebase.mjs`, `node tests/e2e-motion.mjs` and `node tests/e2e-desktop.mjs`
 - Firebase SDK version is set in `public/js/store.js` (`FB_VER`).
