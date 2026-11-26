@@ -1,7 +1,7 @@
 // Offline support: the app shell is cached so Pocket opens without signal.
 // Code files are fetched fresh when online (network first) so updates show up right away.
 // Firebase handles offline data separately (it caches your data on the device).
-const CACHE = "pocket-v5";
+const CACHE = "pocket-v6";
 const SHELL = ["./", "index.html", "css/app.css", "css/ios.css", "css/motion.css", "css/desktop.css", "js/app.js", "js/motion.js", "js/desktop.js", "js/finance.js", "js/store.js", "js/charts.js", "js/firebase-config.js",
   "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 

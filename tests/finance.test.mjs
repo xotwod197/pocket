@@ -163,3 +163,37 @@ test("suggestCategory learns from history", () => {
     { date: "2026-10-01", label: "capital one", categoryId: "credit", type: "expense" }] }, " Capital ONE ");
   assert.equal(s.categoryId, "credit");
 });
+
+// Semi-monthly hourly pay, checked against West Coast Magnetics' 2026 payroll calendar
+const WCM_HOL = new Set(["2026-01-01","2026-01-19","2026-02-16","2026-05-25","2026-07-03","2026-09-07","2026-11-26","2026-12-25","2027-01-01",
+  "2027-01-18","2027-02-15","2027-05-31","2027-07-05","2027-09-06","2027-11-25","2027-12-24","2027-12-31"]);
+const WCM = { id: "wcm", label: "WCM", type: "income", kind: "paycheck", freq: "semimonthly", monthDays: [15, 31], startDate: "2025-12-01", shift: "before", amount: 1500, accountId: "a",
+  meta: { payType: "hourly", hourly: 23, hours: 40, tax: 20, periodEnds: [10, 25], paidHolidays: true } };
+test("semi-monthly paydays match the 2026 payroll calendar (15th & last day, business day before)", () => {
+  const got = F.expandRule(WCM, "2026-01-01", "2026-12-31", WCM_HOL).map((o) => o.date);
+  assert.deepEqual(got, ["2026-01-15","2026-01-30","2026-02-13","2026-02-27","2026-03-13","2026-03-31","2026-04-15","2026-04-30","2026-05-15","2026-05-29",
+    "2026-06-15","2026-06-30","2026-07-15","2026-07-31","2026-08-14","2026-08-31","2026-09-15","2026-09-30","2026-10-15","2026-10-30","2026-11-13","2026-11-30","2026-12-15","2026-12-31"]);
+});
+test("hourly pay windows: 15th pays 26th–10th, last day pays 11th–25th", () => {
+  assert.deepEqual(F.payWindow(WCM, "2026-01-15"), { from: "2025-12-26", to: "2026-01-10" });
+  assert.deepEqual(F.payWindow(WCM, "2026-01-31"), { from: "2026-01-11", to: "2026-01-25" });
+  assert.deepEqual(F.payWindow(WCM, "2026-03-15"), { from: "2026-02-26", to: "2026-03-10" });
+  assert.deepEqual(F.payWindow(WCM, "2026-02-28"), { from: "2026-02-11", to: "2026-02-25" });
+  const aligned = { ...WCM, meta: { ...WCM.meta, periodEnds: [15, 31] } };
+  assert.deepEqual(F.payWindow(aligned, "2026-02-15"), { from: "2026-02-01", to: "2026-02-15" });
+  assert.deepEqual(F.payWindow(aligned, "2026-02-28"), { from: "2026-02-16", to: "2026-02-28" });
+  assert.equal(F.payWindow({ ...WCM, meta: { ...WCM.meta, periodEnds: null } }, "2026-02-15"), null);
+});
+test("each check is worked out from the weekdays in its window", () => {
+  const y = F.expandRule(WCM, "2027-01-01", "2027-12-31", WCM_HOL);
+  assert.equal(y.length, 24);
+  const byDate = Object.fromEntries(y.map((o) => [o.date, o]));
+  assert.equal(byDate["2027-03-15"].payHours, 72); assert.equal(byDate["2027-03-15"].payGross, 1656); assert.equal(byDate["2027-03-15"].amount, 1324.8);
+  assert.equal(byDate["2027-02-12"].payHours, 96);                     // Feb 15 is Presidents Day → paid Friday the 12th
+  assert.equal(byDate["2027-12-30"].payHours, 80);                     // Dec 31 is New Year's (observed) → paid Thursday the 30th
+  assert.equal(F.round2(y.reduce((s, o) => s + o.payGross, 0)), 47840);
+  const unpaid = { ...WCM, meta: { ...WCM.meta, paidHolidays: false } };
+  assert.equal(F.expandRule(unpaid, "2027-01-15", "2027-01-15", WCM_HOL)[0].payHours, 72);   // New Year's not paid → 8 h less
+  const ov = { ...WCM, overrides: { "2027-03-15": { amount: 1400 } } };
+  assert.equal(F.expandRule(ov, "2027-03-15", "2027-03-15", WCM_HOL)[0].amount, 1400);        // a one-time change still wins
+});

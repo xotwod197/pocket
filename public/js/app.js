@@ -640,7 +640,7 @@ function planPay() {
   html += `<button class="bigbtn" data-act="editJob">+ Add a job / paycheck</button>`;
   if (jobs.length) html += `<div class="sechead"><h2>Your jobs</h2></div><div class="card flush">${jobs.map((r) => `<button class="item" data-act="editJob" data-id="${r.id}"><span class="ico" style="background:var(--good-bg)">💼</span>
       <span class="info"><span class="nm" style="display:block">${esc(r.label)}</span><span class="mt" style="display:block">${esc(freqText(r))}${r.meta && r.meta.hourly ? ` · $${r.meta.hourly}/hr × ${r.meta.hours}h` : ""}${r.shift === "before" ? " · early if weekend" : ""}</span></span>
-      <span class="amt num inc">${money(r.amount)}<small>per check</small></span></button>`).join("")}</div>`;
+      <span class="amt num inc">${money(r.amount)}<small>${r.meta && Array.isArray(r.meta.periodEnds) ? "average check" : "per check"}</small></span></button>`).join("")}</div>`;
   if (nextChecks.length) html += `<div class="sechead"><h2>Upcoming paydays</h2></div><div class="card flush">${nextChecks.map((i) => itemRow(i, { showDate: true })).join("")}</div>`;
   if (!jobs.length) html += `<div class="card"><div class="empty"><span class="e">💼</span>Add each job once (hourly rate, hours, how often you're paid) and every future payday shows up on your calendar, moved earlier when it lands on a weekend or holiday.</div></div>`;
   html += `<p class="fine">Paydays that land on a weekend or a holiday in Settings → Holidays move to the business day before.</p>`;
@@ -885,8 +885,9 @@ function openOccurrence(occId) {
   const ov = (r.overrides || {})[nominal] || {};
   const occ = F.expandRule(r, F.addDays(nominal, -15), F.addDays(nominal, 15), holidays()).find((o) => o.nominal === nominal);
   S.form = { kind: "occ", ruleId, nominal };
-  const body = `<div class="banner info" style="margin-bottom:14px">${esc(r.label)} · ${esc(freqText(r))}</div>
-    <div class="fg"><label for="oAmt">Amount this time</label><div class="amtwrap"><span>$</span><input id="oAmt" inputmode="decimal" value="${occ ? occ.amount : r.amount}"></div></div>
+  const pays = occ && occ.payFrom ? `<br>Pays ${fmtDate(occ.payFrom, { month: "short", day: "numeric" })} – ${fmtDate(occ.payTo, { month: "short", day: "numeric" })} · ${occ.payHours} hours · ${money(occ.payGross)} before taxes` : "";
+  const body = `<div class="banner info" style="margin-bottom:14px">${esc(r.label)} · ${esc(freqText(r))}${pays}</div>
+    <div class="fg"><label for="oAmt">Amount this time</label><div class="amtwrap"><span>$</span><input id="oAmt" inputmode="decimal" value="${(Number(occ ? occ.amount : r.amount) || 0).toFixed(2)}"></div></div>
     <div class="fg"><label for="oDate">Date this time</label><input type="date" id="oDate" value="${occ ? occ.date : nominal}"></div>
     <div class="btnrow" style="margin:0 0 4px"><button class="bigbtn small ghost" data-act="occSkip">Skip this one</button><button class="bigbtn small ghost" data-act="editRule" data-id="${r.id}">Edit every time</button></div>
     <p class="hint" style="font-size:12.5px;color:var(--text-3)">Changing this one doesn't affect other dates.</p>`;
@@ -990,6 +991,7 @@ function openJobForm(id) {
     <div id="jPayFields">${jobPayFields(m, r)}</div>
     <div class="fg"><label for="fFreq">Paid</label><select id="fFreq" data-inp="jobFreq">${["weekly", "biweekly", "semimonthly", "monthly"].map((f) => `<option value="${f}" ${S.form.freq === f ? "selected" : ""}>${FREQ_LABEL[f]}</option>`).join("")}</select></div>
     <div id="freqExtra">${jobFreqExtra(r)}</div>
+    <div id="jWinWrap">${jobWindowFields(m)}</div>
     <div class="fg"><label for="fStart" id="jStartLab">${S.form.freq === "biweekly" || S.form.freq === "weekly" ? "Next payday" : "Starting"}</label><input type="date" id="fStart" value="${r ? r.startDate : today()}"></div>
     <div class="fg"><label for="fShift">Payday on a weekend or holiday</label><select id="fShift"><option value="before" ${!r || r.shift === "before" ? "selected" : ""}>Paid the business day before</option><option value="after" ${r && r.shift === "after" ? "selected" : ""}>Paid the business day after</option><option value="none" ${r && r.shift === "none" ? "selected" : ""}>Same day anyway</option></select></div>
     <div class="fg"><span class="lab">Deposited into</span>${accPick("accountId", S.form.accountId)}</div>
@@ -1005,6 +1007,22 @@ function jobPayFields(m, r) {
       <div class="fg"><label for="jHours">Hours / week</label><input id="jHours" inputmode="decimal" value="${m.hours || 40}" data-inp="jobEst"></div></div>`
     : `<div class="fg"><label for="jSalary">Yearly salary</label><div class="amtwrap sm"><span>$</span><input id="jSalary" inputmode="decimal" value="${m.salary || ""}" data-inp="jobEst"></div></div>`}
     <div class="fg"><label for="jTax">Taxes & deductions (%)</label><input id="jTax" inputmode="decimal" value="${m.tax ?? 20}" data-inp="jobEst"><p class="hint">Check a pay stub: (gross − take-home) ÷ gross. Around 20–25% is common.</p></div>`;
+}
+// semi-monthly hourly jobs: which hours does each check pay for? (exact per-check amounts instead of an average)
+const PAY_WINDOWS = [["15,31", "1st–15th & 16th–end of month"], ["10,25", "26th–10th & 11th–25th"], ["", "Not sure (use an average)"]];
+function jobWindowFields(m) {
+  if (S.form.freq !== "semimonthly" || S.form.payType !== "hourly") return "";
+  const cur = m && Array.isArray(m.periodEnds) ? m.periodEnds.join(",") : m && m.periodEnds === null ? "" : "15,31";
+  return `<div class="fg"><label for="jWin">Each check pays the hours you worked</label><select id="jWin" data-inp="jobEst">${PAY_WINDOWS.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <p class="hint">Your payroll calendar or pay stub shows the dates each check covers. If hours stop on the 10th and 25th, you're paid for them 5 days later. Pocket works out every check from the weekdays in it.</p></div>
+    <div class="toggle" style="margin:-2px 0 14px"><div class="tx">Holidays are paid<small>A holiday in the pay period still counts as a full day</small></div><label class="sw"><input type="checkbox" id="jPaidHol" data-inp="jobEst" aria-label="Holidays are paid" ${!m || m.paidHolidays !== false ? "checked" : ""}><span></span></label></div>`;
+}
+function jobFormRule() {   // the job as it's typed in the form, for previewing exact checks
+  const win = val("jWin");
+  return { id: "preview", kind: "paycheck", type: "income", freq: val("fFreq"), startDate: val("fStart") || today(), shift: val("fShift") || "none",
+    monthDays: [Number(val("fMd1")) || 15, Number(val("fMd2")) || 31], amount: 0,
+    meta: { payType: S.form.payType, hourly: parseAmt(val("jRate")) || 0, hours: parseFloat(val("jHours")) || 40, tax: parseFloat(val("jTax")) || 0,
+      periodEnds: win ? win.split(",").map(Number) : null, paidHolidays: $("jPaidHol") ? $("jPaidHol").checked : true } };
 }
 function jobFreqExtra(r) {
   if (S.form.freq === "semimonthly") { const md = r && r.monthDays ? r.monthDays : [15, 31]; return `<div class="row2"><div class="fg"><label for="fMd1">First payday</label><input id="fMd1" inputmode="numeric" value="${md[0]}"></div><div class="fg"><label for="fMd2">Second payday</label><input id="fMd2" inputmode="numeric" value="${md[1]}"></div></div><p class="hint" style="margin:-8px 2px 12px;font-size:12.5px;color:var(--text-3)">31 = last day of the month.</p>`; }
@@ -1022,6 +1040,20 @@ function jobEstimate() {
   }
   if (!(net > 0)) { el.innerHTML = `<p class="sub" style="margin:0;font-size:14px">Fill in your pay to see each check.</p>`; return null; }
   const n = F.CHECKS_PER_YEAR[freq];
+  if (pt === "hourly" && freq === "semimonthly" && val("jWin")) {
+    const rule = jobFormRule(), from = rule.startDate > today() ? rule.startDate : today();
+    const checks = F.expandRule(rule, from, F.addDays(from, 370), holidays()).slice(0, 24);
+    if (checks.length) {
+      const nets = checks.map((c) => c.amount), avg = F.round2(nets.reduce((a, b) => a + b, 0) / nets.length), yr = nets.reduce((a, b) => a + b, 0);
+      const short = (ds) => fmtDate(ds, { month: "short", day: "numeric" });
+      el.innerHTML = `<div class="kv"><span>Each check</span><b class="num inc">${money(Math.min(...nets))} – ${money(Math.max(...nets))}</b></div>
+        <div class="kv"><span>Next 12 months</span><b class="num">${money(yr, { cents: false })}</b></div>
+        <div class="kv"><span>Per month (average)</span><b class="num">${money(yr / 12)}</b></div>
+        <p class="hint" style="margin:12px 0 6px;font-weight:600;color:var(--text-2)">Next paydays</p>
+        ${checks.slice(0, 6).map((c) => `<div class="kv"><span>${fmtDate(c.date)} <small class="muted">· ${short(c.payFrom)} – ${short(c.payTo)} · ${c.payHours} h</small></span><b class="num">${money(c.amount)}</b></div>`).join("")}`;
+      return { net: avg, gross: F.round2(checks.reduce((a, c) => a + c.payGross, 0) / checks.length) };
+    }
+  }
   el.innerHTML = `<div class="kv"><span>Take-home per check</span><b class="num inc">${money(net)}</b></div>
     ${gross ? `<div class="kv"><span>Before taxes</span><b class="num">${money(gross)}</b></div>` : ""}
     <div class="kv"><span>Per month (average)</span><b class="num">${money(net * n / 12)}</b></div>
@@ -1037,7 +1069,8 @@ async function saveJob() {
   try {
     r = readRuleSchedule({ ...(old ? stripId(old) : {}), label, amount: F.round2(est.net), type: "income", kind: "paycheck", categoryId: "income", accountId: S.form.accountId, toAccountId: null,
       skips: (old && old.skips) || [], overrides: (old && old.overrides) || {},
-      meta: { payType: S.form.payType, hourly: parseAmt(val("jRate")) || null, hours: parseFloat(val("jHours")) || null, salary: parseAmt(val("jSalary")) || null, tax: parseFloat(val("jTax")) || 0 } });
+      meta: { payType: S.form.payType, hourly: parseAmt(val("jRate")) || null, hours: parseFloat(val("jHours")) || null, salary: parseAmt(val("jSalary")) || null, tax: parseFloat(val("jTax")) || 0,
+        ...($("jWin") ? { periodEnds: val("jWin") ? val("jWin").split(",").map(Number) : null, paidHolidays: $("jPaidHol").checked } : { periodEnds: null }) } });
   } catch (e) { return toast(e.message); }
   if (r.freq === "biweekly" || r.freq === "weekly") r.weekday = F.weekday(r.startDate);
   await S.store.put("rules", S.form.id, r);
@@ -1422,7 +1455,7 @@ const ACT = {
       if ($("fKindWrap")) $("fKindWrap").innerHTML = f.type === "expense" ? `<div class="fg"><span class="lab">Type</span>${seg("rkind", f.rkind || "bill", [["bill", "Bill"], ["subscription", "Subscription"]])}</div>` : ""; }
     if (ds.seg === "rkind") f.rkind = ds.v;
     if (ds.seg === "ckind") f.ckind = ds.v;
-    if (ds.seg === "payType") { f.payType = ds.v; $("jPayFields").innerHTML = jobPayFields({ payType: ds.v, hours: 40, tax: 20 }, null); jobEstimate(); }
+    if (ds.seg === "payType") { f.payType = ds.v; $("jPayFields").innerHTML = jobPayFields({ payType: ds.v, hours: 40, tax: 20 }, null); $("jWinWrap").innerHTML = jobWindowFields(null); jobEstimate(); }
     M.syncThumbs($("sheet"), true);
   },
   pickCat: (ds, el) => { pickInGrid(el); S.form.categoryId = ds.v; },
@@ -1482,7 +1515,7 @@ const INP = {
   cdTo: () => catDelHint(),
   buffer: (el) => { clearTimeout(qTimer); qTimer = setTimeout(() => S.store.setSettings({ buffer: parseAmt(el.value) || 0 }), 600); },
   freq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = freqExtra(S.form.id ? data().rules.find((r) => r.id === S.form.id) : null); },
-  jobFreq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = jobFreqExtra(null); $("jStartLab").textContent = el.value === "biweekly" || el.value === "weekly" ? "Next payday" : "Starting"; jobEstimate(); },
+  jobFreq: (el) => { S.form.freq = el.value; $("freqExtra").innerHTML = jobFreqExtra(null); $("jWinWrap").innerHTML = jobWindowFields(null); $("jStartLab").textContent = el.value === "biweekly" || el.value === "weekly" ? "Next payday" : "Starting"; jobEstimate(); },
   jobEst: () => jobEstimate(),
   goalAcct: (el) => { $("gSavedWrap").hidden = !!el.value; },
   debtExtra: (el) => { S.debtExtra = { ...(S.debtExtra || {}), [el.dataset.id]: +el.value }; S.restoreScroll = true; render(); },

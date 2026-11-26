@@ -96,9 +96,12 @@ const run = async () => {
   await p.fill("#jName", "West Coast Magnetics");
   await p.fill("#jRate", "23"); await p.fill("#jHours", "40"); await p.fill("#jTax", "23");
   await p.selectOption("#fFreq", "semimonthly"); await p.waitForTimeout(150);
-  await p.fill("#fStart", "2026-10-13");
+  await p.fill("#fStart", "2026-10-13"); await p.locator("#jRate").dispatchEvent("input"); await p.waitForTimeout(150);
   t = await p.locator("#jEst").innerText();
-  ok("planner estimate shows $1,534.87 per check", t.includes("$1,534.87"), t);
+  ok("semi-monthly hourly: exact checks by pay period", t.includes("Next paydays") && /Each check\s*\$[\d,.]+ – \$/.test(t), t.slice(0, 160));
+  await p.selectOption("#jWin", ""); await p.waitForTimeout(150);
+  t = await p.locator("#jEst").innerText();
+  ok("planner estimate shows $1,534.87 per check (average option)", t.includes("$1,534.87"), t);
   await shot("04-job-sheet");
   await layoutCheck(p, "job sheet");
   await act("saveJob"); await p.waitForTimeout(300);

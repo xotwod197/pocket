@@ -95,6 +95,45 @@ function nominalDates(rule, from, to) {
   return out;
 }
 
+/* ---------------- hourly pay windows ----------------
+ A semi-monthly hourly job can pay each check for hours worked in its own window, e.g. West Coast Magnetics:
+ paid the 15th for the 26th–10th, paid the last day for the 11th–25th (rule.meta.periodEnds = [10, 25]).
+ periodEnds [15, 31] means each check covers the 1st–15th / 16th–end of month. 31 = last day of the month. */
+export function payWindow(rule, nominal) {
+  const meta = rule.meta || {};
+  if (rule.freq !== "semimonthly" || !Array.isArray(meta.periodEnds) || meta.periodEnds.length !== 2) return null;
+  const y = +nominal.slice(0, 4), m = +nominal.slice(5, 7), d = +nominal.slice(8, 10), dim = daysInMonth(y, m);
+  const pays = (rule.monthDays && rule.monthDays.length ? rule.monthDays : [15, 31]).map(Number).sort((a, b) => a - b);
+  const [e1, e2] = meta.periodEnds.map(Number);
+  const first = d === Math.min(pays[0], dim);
+  if (first) {
+    const pm = m === 1 ? [y - 1, 12] : [y, m - 1];
+    return { from: addDays(ymd(pm[0], pm[1], Math.min(e2, daysInMonth(pm[0], pm[1]))), 1), to: ymd(y, m, Math.min(e1, dim)) };
+  }
+  return { from: addDays(ymd(y, m, Math.min(e1, dim)), 1), to: ymd(y, m, Math.min(e2, dim)) };
+}
+// weekdays from..to; holidays are left out only when they're unpaid
+export function workdays(from, to, holidays, paidHolidays = true) {
+  let n = 0, hol = 0;
+  for (let k = dayNum(from), e = dayNum(to); k <= e; k++) {
+    const ds = fromDayNum(k), w = weekday(ds);
+    if (w === 0 || w === 6) continue;
+    if (holidays && holidays.has(ds)) { hol++; if (!paidHolidays) continue; }
+    n++;
+  }
+  return { days: n, holidays: hol };
+}
+// one check for an hourly job with pay windows: hours = workdays × (hours per week ÷ 5)
+export function hourlyCheck(rule, nominal, holidays) {
+  const w = payWindow(rule, nominal); if (!w) return null;
+  const meta = rule.meta || {};
+  if (meta.payType !== "hourly" || !(Number(meta.hourly) > 0)) return null;
+  const wd = workdays(w.from, w.to, holidays, meta.paidHolidays !== false);
+  const hours = round2(wd.days * (Number(meta.hours) || 40) / 5);
+  const gross = round2(hours * Number(meta.hourly));
+  return { ...w, days: wd.days, holidays: wd.holidays, hours, gross, net: round2(gross * (1 - (Number(meta.tax) || 0) / 100)) };
+}
+
 export function expandRule(rule, from, to, holidays) {
   // Generate a little outside the window so business-day shifts across the edge are caught.
   const pad = rule.shift && rule.shift !== "none" ? 10 : 0;
@@ -106,9 +145,11 @@ export function expandRule(rule, from, to, holidays) {
     const o = ov[nominal] || {};
     let date = o.date || shiftDate(nominal, rule.shift, holidays);
     if (date < from || date > to) continue;
+    const hc = rule.kind === "paycheck" ? hourlyCheck(rule, nominal, holidays) : null;
     res.push({
       id: rule.id + "@" + nominal, ruleId: rule.id, nominal, date, virtual: true,
-      label: rule.label, amount: round2(Number(o.amount !== undefined ? o.amount : rule.amount) || 0),
+      label: rule.label, amount: round2(Number(o.amount !== undefined ? o.amount : hc ? hc.net : rule.amount) || 0),
+      ...(hc ? { payFrom: hc.from, payTo: hc.to, payHours: hc.hours, payGross: hc.gross } : {}),
       type: rule.type, accountId: rule.accountId, toAccountId: rule.toAccountId || null,
       categoryId: rule.categoryId || null, kind: rule.kind || "other", note: rule.note || ""
     });
